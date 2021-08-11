@@ -1,0 +1,20 @@
+{
+  "name": "rigel",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "yarn run build && yarn run test",
+    "test": "node examples/index.js",
+    "build": "rollup --config",
+    "lint": "prettier --write . --ignore-path .gitignore"
+  },
+  "devDependencies": {
+    "@rollup/plugin-typescript": "^8.2.1",
+    "prettier": "^2.3.2",
+    "rollup": "^2.48.0",
+    "tslib": "^2.2.0",
+    "typescript": "^4.2.4"
+  },
+  "dependencies": {}
+}
