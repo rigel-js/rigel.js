@@ -10,6 +10,7 @@ import {
   JSONArray,
   DataTableInterface,
   DataTableAttribute,
+  DataTableAttributeValue,
   DataTableTuple,
 } from "./data_source";
 
@@ -44,6 +45,7 @@ export {
   JSONArray,
   DataTableInterface,
   DataTableAttribute,
+  DataTableAttributeValue,
   DataTableTuple,
   TargetTableSyntax,
   TargetTableAttribute,

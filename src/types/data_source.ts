@@ -46,7 +46,13 @@ export interface DataTableInterface {
 
 export interface DataTableAttribute {
   name: string;
-  values: any[];
+  values: DataTableAttributeValue[];
 }
 
-export type DataTableTuple = any[];
+export interface DataTableAttributeValue {
+  value: string|number;
+  table: string;
+  attribute: string;
+}
+
+export type DataTableTuple = any;
