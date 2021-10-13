@@ -57,14 +57,13 @@ export default class DataTable implements DataTableInterface {
       // values.push(attrs);
 
       (dataSource as InlineJSONDataSource).values.forEach((dataObj: object) => {
-        
         const CSVLineArray = [];
         for (const attr of attrs) {
           let value: DataTableAttributeValue = {
             value: dataObj[attr],
             table: this.name,
-            attribute: attr
-          }
+            attribute: attr,
+          };
           CSVLineArray.push(value);
         }
         values.push(CSVLineArray);
@@ -76,16 +75,16 @@ export default class DataTable implements DataTableInterface {
     // this.tuples = values.slice(1);
     this.tuples = dataSource.values;
     this.attributes = attrs.map((attrName, index) => {
-      let valueList = values.map((tuple) => tuple[index])
+      let valueList = values.map((tuple) => tuple[index]);
       var obj = {};
-      valueList = valueList.reduce(function(item, next) {
-       obj[next.value] ? '' : obj[next.value] = true && item.push(next);
-       return item;
+      valueList = valueList.reduce(function (item, next) {
+        obj[next.value] ? "" : (obj[next.value] = true && item.push(next));
+        return item;
       }, []);
-      return{
+      return {
         name: attrName,
-        values: valueList
-      }
+        values: valueList,
+      };
     });
     // console.log(JSON.stringify(this.attributes))
   }

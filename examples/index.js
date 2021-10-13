@@ -31,8 +31,9 @@ const rigel = require("../dist/rigel");
 //   ],
 // });
 
+// TODO: 感觉结果有点问题？
 // state, year -> crime
-// union(state) x union(year), () -> crime
+// union(state) x union(year), () -> crime + gdp
 // state, bin(crime, 5) -> count(year)
 const result = rigel.transform({
   data: [
@@ -149,28 +150,26 @@ const result = rigel.transform({
 const prettyPrint = (r) => {
   let t = Object.assign([], r);
   console.log(modifyStyle(t));
-  
-}
+};
 
 const modifyStyle = (t) => {
-  if(t === null)return null;
-  if(t instanceof Array) {
-    for(var i=0;i<t.length;i++){
-      t[i]=modifyStyle(t[i]);
+  if (t === null) return null;
+  if (t instanceof Array) {
+    for (var i = 0; i < t.length; i++) {
+      t[i] = modifyStyle(t[i]);
     }
   }else {
     if(typeof(t)=="object") {
       if(typeof(t.value)=="object"){
         t=`[${t.value.lower}, ${t.value.upper}`+(t.value.isRightOpen?")":"]");
       } else {
-        t=t.value;
+        t = t.value;
       }
     }
   }
   return t;
-}
+};
 
 // console.log(result);
 // console.log(JSON.stringify(result));
 prettyPrint(result);
-

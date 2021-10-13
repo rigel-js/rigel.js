@@ -50,7 +50,7 @@ export interface DataTableAttribute {
 }
 
 export interface DataTableAttributeValue {
-  value: string|number;
+  value: string | number;
   table: string;
   attribute: string;
 }
