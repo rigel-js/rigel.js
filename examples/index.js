@@ -161,7 +161,7 @@ const modifyStyle = (t) => {
   }else {
     if(typeof(t)=="object") {
       if(typeof(t.value)=="object"){
-        t=`[${t.value.lower}, ${t.value.upper}]`;
+        t=`[${t.value.lower}, ${t.value.upper}`+(t.value.isRightOpen?")":"]");
       } else {
         t=t.value;
       }

@@ -331,8 +331,14 @@ const queryTable = (
     constraints.forEach(constraint => {
       let key = constraint.attribute, value = constraint.value;
       if (typeof (value) == "object") { //bin产生的区间，包括lower和upper 
-        if (!(tuple[key] >= value.lower - eps && tuple[key] < value.upper - eps)) {
-          ok = false;
+        if(value.isRightOpen){
+          if (!(tuple[key] >= value.lower - eps && tuple[key] < value.upper - eps)) {
+            ok = false;
+          }
+        } else {
+          if (!(tuple[key] >= value.lower - eps && tuple[key] <= value.upper + eps)) {
+            ok = false;
+          }
         }
       } else if (tuple[key] != value) {
         ok = false;

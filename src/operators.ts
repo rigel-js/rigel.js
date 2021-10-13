@@ -84,7 +84,8 @@ const bin = (values: any[], binNumber: number): number[][] => {
     result[i].value = {
       lower: min+i*interval,
       // upper: (i==binNumber-1)?Infinity:min+i*interval
-      upper: min+(i+1)*interval
+      upper: min+(i+1)*interval,
+      isRightOpen: (i!=binNumber-1)
     }
   }
   return result;
