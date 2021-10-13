@@ -85,6 +85,27 @@ export const computeTargetTable = (
     [],
     parseHeader(tables, syntaxTree.column_header)
   );
+  
+
+  // Body
+  let cnt = 0;
+  let bodyList = parseBody(syntaxTree.body);
+  // console.log("body:");
+  // console.log(bodyList);
+
+  if (columnList.length == 1 && columnList[0] === "_") {  // feat: 当rowHeader（或columnHeader）为空时，按照body内attr的数量填充"_"
+    for (var i = 0; i < bodyList.length - 1; i++) {
+      columnList.push("_");
+    }
+  }
+  if (rowList.length == 1 && rowList[0] === "_") {
+    for (var i = 0; i < bodyList.length - 1; i++) {
+      rowList.push("_");
+    }
+  }
+
+  // Handle Row Header and Column Header
+
   let rowDim = calcDimension(rowList);
   let columnDim = calcDimension(columnList);
   let rowSize = rowList.length;
@@ -137,11 +158,9 @@ export const computeTargetTable = (
   //   data: "crime",
   //   attribute: "state",
   // }))
-  //Body
-  let cnt = 0;
-  let bodyList = parseBody(syntaxTree.body);
-  // console.log("body:");
-  // console.log(bodyList);
+
+
+  //Handle Body
   let queryAttr: TargetTableAttribute | TargetTableOperator = bodyList[0];
   // for (var j = rowDim; j < rowDim + columnSize; j++) {
   //   if(typeof(targetTable[0][j]) == "string" && targetTable[0][j] == "_"){
@@ -346,7 +365,7 @@ const queryTable = (
     constraints.forEach(constraint => {
       let key = constraint.attribute, value = constraint.value;
       if (typeof (value) == "object") { //bin产生的区间，包括lower和upper 
-        if(value.isRightOpen){
+        if (value.isRightOpen) {
           if (!(tuple[key] >= value.lower - eps && tuple[key] < value.upper - eps)) {
             ok = false;
           }
