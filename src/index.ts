@@ -8,9 +8,8 @@ import {
 } from "./types";
 import DataTable from "./data_source";
 import {
-  tokenizeExpression,
-  parseTokens,
   computeTargetTable,
+  parseExpression,
 } from "./target_table";
 
 const transform = (spec: Spec) => {
@@ -22,8 +21,9 @@ const transform = (spec: Spec) => {
     (targetTable: TargetTableSyntax | TargetTableExpression): TargetTable => {
       let syntaxTree: TargetTableSyntax;
       if (typeof targetTable === "string") {
-        const tokens: ExpressionToken[] = tokenizeExpression(targetTable);
-        syntaxTree = parseTokens(tokens);
+        // const tokens: ExpressionToken[] = tokenizeExpression(targetTable);
+        // syntaxTree = parseTokens(tokens);
+        syntaxTree = parseExpression(targetTable);
       } else {
         syntaxTree = targetTable;
       }

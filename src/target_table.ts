@@ -14,6 +14,8 @@ import {
 } from "./types";
 import operators from "./operators";
 import { calcDimension } from "./utils";
+import { start } from "repl";
+var esprima = require('esprima');
 
 const eps = 1e-6;
 const digitUnicodeStart = 48;
@@ -42,33 +44,117 @@ const identifierCharacters = [
 ];
 const punctuatorCharacters = [",", ".", "(", ")"];
 
-export const tokenizeExpression = (
+// export const tokenizeExpression = (
+//   expression: TargetTableExpression
+// ): ExpressionToken[] => {
+//   const tokens: ExpressionToken[] = [];
+
+//   for (const c of expression) {
+//     if (c.match(/\S/)) continue;
+
+//     if (punctuatorCharacters.includes(c)) {
+//       tokens.push({
+//         type: TokenTypeEnum.Punctuator,
+//         value: c,
+//       });
+//     } else if (identifierStartCharacters.includes(c)) {
+//       // TODO
+//     }
+//   }
+
+//   return tokens;
+// };
+
+export const parseExpression = (
   expression: TargetTableExpression
-): ExpressionToken[] => {
-  const tokens: ExpressionToken[] = [];
+): TargetTableSyntax => {
+  let pattern = /( )*\(.*\)( )*,( )*\(.*\)( )*=>( )*\(.*\)( )*/;
+  let targetTableSyntax: TargetTableSyntax = {
+    row_header: undefined,
+    column_header: undefined,
+    body: undefined
+  };
+  if (!pattern.test(expression)) {
+    throw new Error("Illegal Expression!");
+  }
 
-  for (const c of expression) {
-    if (c.match(/\S/)) continue;
-
-    if (punctuatorCharacters.includes(c)) {
-      tokens.push({
-        type: TokenTypeEnum.Punctuator,
-        value: c,
-      });
-    } else if (identifierStartCharacters.includes(c)) {
-      // TODO
+  var i = 0; // current cursor
+  let startPos, cnt;
+  let flag; // 0: rowHeader 1: columnHeader 2: Body
+  for (flag = 0; flag < 3; flag++) {
+    while (i < expression.length && expression[i] != '(') i++;
+    startPos = i;
+    i++;
+    cnt = 1;
+    for (; i < expression.length; i++) {
+      if (expression[i] == '(') cnt++;
+      if (expression[i] == ')') cnt--;
+      if (cnt == 0) break;
+    }
+    if (cnt != 0) {
+      throw new Error("Illegal Expression!");
+    }
+    if (startPos + 1 < i) {
+      let tokens = esprima.parseScript(expression.slice(startPos + 1, i))
+      tokens = tokens.body[0].expression;
+      switch (flag) {
+        case 0: targetTableSyntax.row_header = parseTokens(tokens); break;
+        case 1: targetTableSyntax.column_header = parseTokens(tokens); break;
+        default: targetTableSyntax.body = parseTokens(tokens); break;
+      }
+    } else {
+      switch (flag) {
+        case 0: targetTableSyntax.row_header = undefined; break;
+        case 1: targetTableSyntax.column_header = undefined; break;
+        default: targetTableSyntax.body = undefined; break;
+      }
     }
   }
 
-  return tokens;
+  return targetTableSyntax;
 };
 
-export const parseTokens = (tokens: ExpressionToken[]): TargetTableSyntax => {
-  const syntaxTree = {};
-
-  // TODO
-
-  return syntaxTree as TargetTableSyntax;
+export const parseTokens = (tokens): TargetTableAttribute | TargetTableOperator => {
+  // console.log("tokens:", tokens);
+  if (tokens.type == "MemberExpression") {
+    return {
+      data: tokens.object.name,
+      attribute: tokens.property.name
+    } as TargetTableAttribute;
+  } else if (tokens.type == "BinaryExpression") {
+    if (tokens.operator == "+") {
+      return {
+        operator: "add",
+        parameters: [parseTokens(tokens.left), parseTokens(tokens.right)]
+      } as TargetTableOperator;
+    } else if (tokens.operator == "*") {
+      return {
+        operator: "cross",
+        parameters: [parseTokens(tokens.left), parseTokens(tokens.right)]
+      } as TargetTableOperator;
+    } else {
+      throw new Error("Illegal Expression!");
+    }
+  } else if (tokens.type == "CallExpression") {
+    if (tokens.callee.name == "bin") {
+      return {
+        operator: tokens.callee.name,
+        parameters: [parseTokens(tokens.arguments[0]), { value: tokens.arguments[1].value }]
+      } as TargetTableOperator;
+    } else if (tokens.callee.name == "intersect" || tokens.callee.name == "union") {
+      return {
+        operator: tokens.callee.name,
+        parameters: [parseTokens(tokens.arguments[0]), parseTokens(tokens.arguments[1])]
+      } as TargetTableOperator;
+    } else {
+      return {
+        operator: tokens.callee.name,
+        parameters: [parseTokens(tokens.arguments[0])]
+      } as TargetTableOperator;
+    }
+  } else {
+    throw new Error("Illegal Expression!");
+  }
 };
 
 export const computeTargetTable = (
@@ -85,7 +171,7 @@ export const computeTargetTable = (
     [],
     parseHeader(tables, syntaxTree.column_header)
   );
-  
+
 
   // Body
   let cnt = 0;
@@ -161,7 +247,15 @@ export const computeTargetTable = (
 
 
   //Handle Body
-  let queryAttr: TargetTableAttribute | TargetTableOperator = bodyList[0];
+  let queryAttr: TargetTableAttribute | TargetTableOperator;
+  let defaultQueryAttr = -1;
+  let rowDict = [], columnDict = []; // 对于初始为"_"的rowHeader，rowDict[i]记录第i行的rowHeader最后被修改为了哪一个attr（bodyList的数组下标），columnHeader同
+  for (let i = 0; i < columnDim + rowSize; i++) {
+    rowDict.push(-1);
+  }
+  for (var i = 0; i < rowDim + columnSize; i++) {
+    columnDict.push(-1);
+  }
   // for (var j = rowDim; j < rowDim + columnSize; j++) {
   //   if(typeof(targetTable[0][j]) == "string" && targetTable[0][j] == "_"){
   //     let tmp: TargetTableAttribute = bodyList[cnt++];
@@ -188,35 +282,51 @@ export const computeTargetTable = (
           constraints.push(targetTable[k][j]);
         }
       }
+
       let flag = 0; //用于去除该单元格对应的行和列都为placeholder且attr不同的情况
       if (typeof targetTable[0][j] == "string" && targetTable[0][j] == "_") {
-        let tmp = bodyList[cnt++];
+        let tmp = bodyList[cnt];
+        columnDict[j] = cnt++;
         if (isAttribute(tmp)) {
           targetTable[0][j] = (tmp as TargetTableAttribute).attribute;
         } else {
           let newTmp = tmp as TargetTableOperator;
           targetTable[0][j] = `${newTmp.operator}(${newTmp.parameters[0]})`;
         }
-        queryAttr = tmp;
         flag = 1;
       }
       if (typeof targetTable[i][0] == "string" && targetTable[i][0] == "_") {
-        let tmp = bodyList[cnt++];
+        let tmp = bodyList[cnt];
+        rowDict[i] = cnt++;
         if (isAttribute(tmp)) {
           targetTable[i][0] = (tmp as TargetTableAttribute).attribute;
         } else {
           let newTmp = tmp as TargetTableOperator;
           targetTable[i][0] = `${newTmp.operator}(${newTmp.parameters[0]})`;
         }
-        if (flag && queryAttr != tmp) {
+        if (flag && bodyList[columnDict[j]] != tmp) {
           throw new Error(
             `Selected attribute conflict for ${JSON.stringify(
-              queryAttr
+              bodyList[columnDict[j]]
             )} and ${JSON.stringify(tmp)}`
           );
         }
-        queryAttr = tmp;
+        flag = 1;
       }
+      if (!flag && columnDict[j] == -1 && rowDict[i] == -1 && defaultQueryAttr == -1) {
+        defaultQueryAttr = cnt++;
+      }
+      // console.log("row:", rowDict[i]);
+      // console.log("col:", columnDict[j]);
+      // console.log("def:", defaultQueryAttr)
+      if (columnDict[j] != -1) {
+        queryAttr = bodyList[columnDict[j]];
+      } else if (rowDict[i] != -1) {
+        queryAttr = bodyList[rowDict[i]];
+      } else {
+        queryAttr = bodyList[defaultQueryAttr];
+      }
+      // console.log("queryAttr:", queryAttr);
       targetTable[i][j] = queryTable(constraints, queryAttr, tables);
     }
   }
@@ -358,6 +468,7 @@ const queryTable = (
   let queryAttr: TargetTableAttribute = isAttribute(body)
     ? body
     : (body.parameters[0] as TargetTableAttribute);
+  // console.log("queryAttr:", queryAttr)
   let res = [];
   let originTable = tables.find((table) => table.name == queryAttr.data);
   originTable.tuples.forEach((tuple) => {
