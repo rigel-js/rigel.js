@@ -169,6 +169,7 @@ const result = rigel.transform({
     },
   ],
   target_table: [
+    "(crime.state), (crime.year) => ()",
     "(crime.state), (crime.year) => (crime.crime)",
     "(union(crime.state, gdp.state) * union(crime.year, gdp.year)), () => (crime.crime + gdp.gdp)",
     "(crime.state), (bin(crime.crime, 5)) => (count(crime.year))"

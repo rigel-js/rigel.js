@@ -15,6 +15,7 @@ import {
 import operators from "./operators";
 import { calcDimension } from "./utils";
 import { start } from "repl";
+import { type } from "os";
 var esprima = require('esprima');
 
 const eps = 1e-6;
@@ -247,6 +248,25 @@ export const computeTargetTable = (
 
 
   //Handle Body
+  if (bodyList[0] === "_") {
+    for (var i = columnDim; i < columnDim + rowSize; i++) {
+      for (var j = rowDim; j < rowDim + columnSize; j++) {
+        targetTable[i][j] = null;
+      }
+    }
+    for (var i = columnDim; i < columnDim + rowSize; i++) {
+
+      if (typeof (targetTable[i][0]) == "string" && targetTable[i][0] == "_") {
+        targetTable[i][0] = null;
+      }
+    }
+    for (var i = rowDim; i < rowDim + columnSize; i++) {
+      if (typeof (targetTable[0][i]) == "string" && targetTable[0][i] == "_") {
+        targetTable[0][i] = null;
+      }
+    }
+    return targetTable;
+  }
   let queryAttr: TargetTableAttribute | TargetTableOperator;
   let defaultQueryAttr = -1;
   let rowDict = [], columnDict = []; // 对于初始为"_"的rowHeader，rowDict[i]记录第i行的rowHeader最后被修改为了哪一个attr（bodyList的数组下标），columnHeader同
@@ -435,6 +455,9 @@ const parseHeader = (
 };
 
 const parseBody = (body: TargetTableAttribute | TargetTableOperator): any[] => {
+  if (typeof body == "undefined" || body === null) {
+    return ["_"];
+  }
   if (isAttribute(body)) return [body];
   let op = (body as TargetTableOperator).operator;
   let paras = (body as TargetTableOperator).parameters;
@@ -467,7 +490,7 @@ const queryTable = (
 ): string | number => {
   let queryAttr: TargetTableAttribute = isAttribute(body)
     ? body
-    : (body.parameters[0] as TargetTableAttribute);
+    : body.parameters[0] as TargetTableAttribute;
   // console.log("queryAttr:", queryAttr)
   let res = [];
   let originTable = tables.find((table) => table.name == queryAttr.data);
