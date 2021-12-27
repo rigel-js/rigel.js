@@ -1,7 +1,7 @@
 {
   "name": "rigel-grammar",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "dist/rigel.js",
   "license": "MIT",
   "scripts": {
     "start": "yarn run build && yarn run test",
@@ -9,6 +9,9 @@
     "build": "rollup --config",
     "lint": "prettier --write . --ignore-path .gitignore"
   },
+  "files": [
+    "dist"
+  ],
   "devDependencies": {
     "@rollup/plugin-typescript": "^8.2.1",
     "@types/node": "^16.11.1",
