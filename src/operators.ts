@@ -7,7 +7,7 @@ const avg = (numbers: number[]): number => {
   return sum(numbers) / numbers.length;
 };
 
-const count = () => {};
+const count = () => { };
 
 const add = (set1: any[], set2: any[]): any[] => {
   if (set1.length == 0) return set2;
@@ -85,13 +85,47 @@ const bin = (values: any[], binNumber: number): number[][] => {
     result[i].value = {
       lower: min + i * interval,
       // upper: (i==binNumber-1)?Infinity:min+i*interval
-      upper: min+(i+1)*interval,
-      isRightOpen: (i!=binNumber-1)
+      upper: min + (i + 1) * interval,
+      isRightOpen: (i != binNumber - 1)
     }
   }
   return result;
 };
 
-const concat = () => {};
+const concat = () => { };
 
-export default { sum, avg, count, add, cross, union, intersect, bin, concat };
+const ascsort = (values: any[]): any[] => {
+  let tmp = [];
+  values.forEach(item => {
+    tmp.push(item);
+  });
+  return tmp.sort(function (a, b) {
+    if (typeof (a.value) != typeof (b.value)) {
+      throw new Error("Sort error: incompatible data type");
+    } else if (typeof (a.value) == "number" || typeof (a.value) == "string") {
+      return a.value - b.value;
+    } else {
+      throw new Error("Sort error: items cannot be sorted");
+    }
+  });
+}
+
+const descsort = (values: any[]): any[] => {
+  return ascsort(values).reverse();
+}
+
+const filters = (values: any[], paras: any[]): any[] => {
+  let tmp = [];
+  let valueList = [];
+  paras.forEach(item => {
+    valueList.push(item.value);
+  })
+  values.forEach(item => {
+    if (valueList.indexOf(item.value) != -1) {
+      tmp.push(item);
+    }
+  })
+  return tmp;
+}
+
+export default { sum, avg, count, add, cross, union, intersect, bin, concat, ascsort, descsort, filters };

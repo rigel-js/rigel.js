@@ -16,6 +16,7 @@ import operators from "./operators";
 import { calcDimension } from "./utils";
 import { start } from "repl";
 import { type } from "os";
+import { IfStatement } from "esprima";
 var esprima = require('esprima');
 
 const eps = 1e-6;
@@ -147,6 +148,15 @@ export const parseTokens = (tokens): TargetTableAttribute | TargetTableOperator 
         operator: tokens.callee.name,
         parameters: [parseTokens(tokens.arguments[0]), parseTokens(tokens.arguments[1])]
       } as TargetTableOperator;
+    } else if (tokens.callee.name == "filter") {
+      let params = [parseTokens(tokens.arguments[0])];
+      for (let i = 1; i < tokens.arguments.length; i++) {
+        params.push(tokens.arguments[i]);
+      }
+      return {
+        operator: tokens.callee.name,
+        parameters: params
+      } as TargetTableOperator;
     } else {
       return {
         operator: tokens.callee.name,
@@ -173,7 +183,13 @@ export const computeTargetTable = (
     parseHeader(tables, syntaxTree.column_header)
   );
 
-
+  if(rowList.length == 0) {
+    throw new Error("Row header is empty!");
+  }
+  if(columnList.length == 0) {
+    throw new Error("Column header is empty!");
+  }
+  
   // Body
   let cnt = 0;
   let bodyList = parseBody(syntaxTree.body);
@@ -429,6 +445,29 @@ const parseHeader = (
           typeof divNumber == "string" ? parseInt(divNumber) : Number(divNumber)
         );
       }
+    } else if(op == OperatorEnum.ASCSORT) {
+      if(!isAttribute(para[0])) {
+        throw new Error(`Parameter 1 of ASCSORT is not an attribute`);
+      } else {
+        let attrValue = parseHeader(tables, para[0] as TargetTableAttribute);
+        targetList = operators.ascsort(attrValue);
+      }
+    } else if(op == OperatorEnum.DESCSORT) {
+      if(!isAttribute(para[0])) {
+        throw new Error(`Parameter 1 of DESCSORT is not an attribute`);
+      } else {
+        let attrValue = parseHeader(tables, para[0] as TargetTableAttribute);
+        targetList = operators.descsort(attrValue);
+      }
+    } else if (op == OperatorEnum.FILTER) {
+      if(!isAttribute(para[0])) {
+        throw new Error(`Parameter 1 of FILTER is not an attribute`);
+      } else {
+        let attrValue = parseHeader(tables, para[0] as TargetTableAttribute);
+        let tmp = para.slice(1);
+        targetList = operators.filters(attrValue, tmp);
+      }
+      
     } else {
       if (para.length != 2) {
         throw new Error(`Too few or too many parameters for ${op}`);

@@ -172,7 +172,10 @@ const result = rigel.transform({
     "(crime.state), (crime.year) => ()",
     "(crime.state), (crime.year) => (crime.crime)",
     "(union(crime.state, gdp.state) * union(crime.year, gdp.year)), () => (crime.crime + gdp.gdp)",
-    "(crime.state), (bin(crime.crime, 5)) => (count(crime.year))"
+    "(crime.state), (bin(crime.crime, 5)) => (count(crime.year))",
+    "(crime.state), (descsort(crime.year)) => (count(crime.year))",
+    "(crime.state), (ascsort(crime.year)) => (count(crime.year))",
+    "(crime.state), (filter(crime.year, 2004)) => (count(crime.year))"
   ],
 });
 

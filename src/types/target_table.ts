@@ -34,6 +34,9 @@ export enum OperatorEnum {
   AVERAGE = "avg",
   SUM = "sum",
   COUNT = "count",
+  DESCSORT = "descsort",
+  ASCSORT = "ascsort",
+  FILTER = "filter"
 }
 
 export type TargetTableExpression = string;
