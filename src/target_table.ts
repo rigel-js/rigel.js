@@ -139,7 +139,7 @@ export const parseTokens = (tokens): TargetTableAttribute | TargetTableOperator 
     }
   } else if (tokens.type == "CallExpression") {
     if (tokens.callee.name == "bin") {
-      if(tokens.arguments.length == 2){
+      if (tokens.arguments.length == 2) {
         return {
           operator: tokens.callee.name,
           parameters: [parseTokens(tokens.arguments[0]), tokens.arguments[1]]
@@ -445,15 +445,13 @@ const parseHeader = (
     if (op === OperatorEnum.BIN) {
       if (para.length != 2 && para.length != 4) {
         throw new Error(`Too few or too many parameters for BIN`);
-      } else if (!isAttribute(para[0])) {
-        throw new Error(`Parameter 1 of BIN is not an attribute`);
       } else if (!isValue(para[1])) {
         throw new Error(`Parameter 2 of BIN is illegal value`);
       } else {
-        let attrValue = parseHeader(tables, para[0] as TargetTableAttribute);
+        let attrValue = parseHeader(tables, para[0] as (TargetTableAttribute | TargetTableOperator));
         let divNumber = (para[1] as OperatorValueParameter).value;
         let lowerBound = undefined, upperBound = undefined;
-        if(para.length > 2) {
+        if (para.length > 2) {
           lowerBound = (para[2] as OperatorValueParameter).value;
           upperBound = (para[3] as OperatorValueParameter).value;
         }
@@ -465,34 +463,18 @@ const parseHeader = (
         );
       }
     } else if (op == OperatorEnum.ASCSORT) {
-      if (!isAttribute(para[0])) {
-        throw new Error(`Parameter 1 of ASCSORT is not an attribute`);
-      } else {
-        let attrValue = parseHeader(tables, para[0] as TargetTableAttribute);
-        targetList = operators.ascsort(attrValue);
-      }
+      let attrValue = parseHeader(tables, para[0] as (TargetTableAttribute | TargetTableOperator));
+      targetList = operators.ascsort(attrValue);
     } else if (op == OperatorEnum.DESCSORT) {
-      if (!isAttribute(para[0])) {
-        throw new Error(`Parameter 1 of DESCSORT is not an attribute`);
-      } else {
-        let attrValue = parseHeader(tables, para[0] as TargetTableAttribute);
-        targetList = operators.descsort(attrValue);
-      }
+      let attrValue = parseHeader(tables, para[0] as (TargetTableAttribute | TargetTableOperator));
+      targetList = operators.descsort(attrValue);
     } else if (op == OperatorEnum.VALUEFILTER) {
-      if (!isAttribute(para[0])) {
-        throw new Error(`Parameter 1 of FILTER is not an attribute`);
-      } else {
-        let attrValue = parseHeader(tables, para[0] as TargetTableAttribute);
-        let tmp = para.slice(1);
-        targetList = operators.filterByValue(attrValue, tmp);
-      }
+      let attrValue = parseHeader(tables, para[0] as (TargetTableAttribute | TargetTableOperator));
+      let tmp = para.slice(1);
+      targetList = operators.filterByValue(attrValue, tmp);
     } else if (op == OperatorEnum.BOUNDFILTER) {
-      if (!isAttribute(para[0])) {
-        throw new Error(`Parameter 1 of FILTER is not an attribute`);
-      } else {
-        let attrValue = parseHeader(tables, para[0] as TargetTableAttribute);
-        targetList = operators.filterByBound(attrValue, (para[1] as OperatorValueParameter).value, (para[2] as OperatorValueParameter).value);
-      }
+      let attrValue = parseHeader(tables, para[0] as (TargetTableAttribute | TargetTableOperator));
+      targetList = operators.filterByBound(attrValue, (para[1] as OperatorValueParameter).value, (para[2] as OperatorValueParameter).value);
     } else {
       if (para.length != 2) {
         throw new Error(`Too few or too many parameters for ${op}`);

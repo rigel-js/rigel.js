@@ -177,7 +177,8 @@ const result = rigel.transform({
     "(crime.state), (descsort(crime.year)) => (count(crime.year))",
     "(crime.state), (ascsort(crime.year)) => (count(crime.year))",
     "(crime.state), (filterByValue(crime.year, 2004)) => (count(crime.year))",
-    "(crime.state), (filterByBound(crime.year, 2003, 2005)) => (count(crime.year))"
+    "(crime.state), (filterByBound(crime.year, 2003, 2005)) => (count(crime.year))",
+    "(filterByBound(crime.crime, 3370.9, 4026.3)), () => ()"
   ],
 });
 
