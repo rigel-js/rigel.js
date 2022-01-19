@@ -65,12 +65,12 @@ const intersect = (set1: any[], set2: any[]): any[] => {
 };
 
 const bin = (values: any[], binNumber: number, lowerBound: number, upperBound: number): number[][] => {
-  if(binNumber <= 0){
+  if (binNumber <= 0) {
     throw new Error("The step of BIN is illegal");
   }
   let min, max, result = [];
-  if(lowerBound && upperBound) {
-    if(lowerBound > upperBound) {
+  if (lowerBound && upperBound) {
+    if (lowerBound > upperBound) {
       throw new Error("The lowerBound is bigger than upperBound");
     }
     min = lowerBound;
@@ -109,7 +109,15 @@ const ascsort = (values: any[]): any[] => {
   values.forEach(item => {
     tmp.push(item);
   });
-  return tmp.sort();
+  return tmp.sort(function (a, b) {
+    if (typeof (a.value) != typeof (b.value)) {
+      throw new Error("Sort error: incompatible data type");
+    } else if (typeof (a.value) == "number") {
+      return (a.value > b.value) ? 1 : -1;
+    } else {
+      throw new Error("Sort error: items cannot be sorted");
+    }
+  });
 }
 
 const descsort = (values: any[]): any[] => {
