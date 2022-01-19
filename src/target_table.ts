@@ -139,16 +139,23 @@ export const parseTokens = (tokens): TargetTableAttribute | TargetTableOperator 
     }
   } else if (tokens.type == "CallExpression") {
     if (tokens.callee.name == "bin") {
-      return {
-        operator: tokens.callee.name,
-        parameters: [parseTokens(tokens.arguments[0]), { value: tokens.arguments[1].value }]
-      } as TargetTableOperator;
+      if(tokens.arguments.length == 2){
+        return {
+          operator: tokens.callee.name,
+          parameters: [parseTokens(tokens.arguments[0]), tokens.arguments[1]]
+        } as TargetTableOperator;
+      } else {
+        return {
+          operator: tokens.callee.name,
+          parameters: [parseTokens(tokens.arguments[0]), tokens.arguments[1], tokens.arguments[2], tokens.arguments[3]]
+        } as TargetTableOperator;
+      }
     } else if (tokens.callee.name == "intersect" || tokens.callee.name == "union") {
       return {
         operator: tokens.callee.name,
         parameters: [parseTokens(tokens.arguments[0]), parseTokens(tokens.arguments[1])]
       } as TargetTableOperator;
-    } else if (tokens.callee.name == "filter") {
+    } else if (tokens.callee.name == OperatorEnum.VALUEFILTER) {
       let params = [parseTokens(tokens.arguments[0])];
       for (let i = 1; i < tokens.arguments.length; i++) {
         params.push(tokens.arguments[i]);
@@ -156,6 +163,11 @@ export const parseTokens = (tokens): TargetTableAttribute | TargetTableOperator 
       return {
         operator: tokens.callee.name,
         parameters: params
+      } as TargetTableOperator;
+    } else if (tokens.callee.name == OperatorEnum.BOUNDFILTER) {
+      return {
+        operator: tokens.callee.name,
+        parameters: [parseTokens(tokens.arguments[0]), tokens.arguments[1], tokens.arguments[2]]
       } as TargetTableOperator;
     } else {
       return {
@@ -183,13 +195,13 @@ export const computeTargetTable = (
     parseHeader(tables, syntaxTree.column_header)
   );
 
-  if(rowList.length == 0) {
+  if (rowList.length == 0) {
     throw new Error("Row header is empty!");
   }
-  if(columnList.length == 0) {
+  if (columnList.length == 0) {
     throw new Error("Column header is empty!");
   }
-  
+
   // Body
   let cnt = 0;
   let bodyList = parseBody(syntaxTree.body);
@@ -431,7 +443,7 @@ const parseHeader = (
     let op = (header as TargetTableOperator).operator;
     let para = (header as TargetTableOperator).parameters;
     if (op === OperatorEnum.BIN) {
-      if (para.length != 2) {
+      if (para.length != 2 && para.length != 4) {
         throw new Error(`Too few or too many parameters for BIN`);
       } else if (!isAttribute(para[0])) {
         throw new Error(`Parameter 1 of BIN is not an attribute`);
@@ -440,34 +452,47 @@ const parseHeader = (
       } else {
         let attrValue = parseHeader(tables, para[0] as TargetTableAttribute);
         let divNumber = (para[1] as OperatorValueParameter).value;
+        let lowerBound = undefined, upperBound = undefined;
+        if(para.length > 2) {
+          lowerBound = (para[2] as OperatorValueParameter).value;
+          upperBound = (para[3] as OperatorValueParameter).value;
+        }
         targetList = operators.bin(
           attrValue,
-          typeof divNumber == "string" ? parseInt(divNumber) : Number(divNumber)
+          typeof divNumber == "string" ? parseInt(divNumber) : Number(divNumber),
+          lowerBound,
+          upperBound
         );
       }
-    } else if(op == OperatorEnum.ASCSORT) {
-      if(!isAttribute(para[0])) {
+    } else if (op == OperatorEnum.ASCSORT) {
+      if (!isAttribute(para[0])) {
         throw new Error(`Parameter 1 of ASCSORT is not an attribute`);
       } else {
         let attrValue = parseHeader(tables, para[0] as TargetTableAttribute);
         targetList = operators.ascsort(attrValue);
       }
-    } else if(op == OperatorEnum.DESCSORT) {
-      if(!isAttribute(para[0])) {
+    } else if (op == OperatorEnum.DESCSORT) {
+      if (!isAttribute(para[0])) {
         throw new Error(`Parameter 1 of DESCSORT is not an attribute`);
       } else {
         let attrValue = parseHeader(tables, para[0] as TargetTableAttribute);
         targetList = operators.descsort(attrValue);
       }
-    } else if (op == OperatorEnum.FILTER) {
-      if(!isAttribute(para[0])) {
+    } else if (op == OperatorEnum.VALUEFILTER) {
+      if (!isAttribute(para[0])) {
         throw new Error(`Parameter 1 of FILTER is not an attribute`);
       } else {
         let attrValue = parseHeader(tables, para[0] as TargetTableAttribute);
         let tmp = para.slice(1);
-        targetList = operators.filters(attrValue, tmp);
+        targetList = operators.filterByValue(attrValue, tmp);
       }
-      
+    } else if (op == OperatorEnum.BOUNDFILTER) {
+      if (!isAttribute(para[0])) {
+        throw new Error(`Parameter 1 of FILTER is not an attribute`);
+      } else {
+        let attrValue = parseHeader(tables, para[0] as TargetTableAttribute);
+        targetList = operators.filterByBound(attrValue, (para[1] as OperatorValueParameter).value, (para[2] as OperatorValueParameter).value);
+      }
     } else {
       if (para.length != 2) {
         throw new Error(`Too few or too many parameters for ${op}`);

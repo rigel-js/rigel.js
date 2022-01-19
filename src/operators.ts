@@ -64,21 +64,31 @@ const intersect = (set1: any[], set2: any[]): any[] => {
   return Array.from(unionSet);
 };
 
-const bin = (values: any[], binNumber: number): number[][] => {
-  // todo
-  if (values.length == 0) {
-    throw new Error("The length of para 1 for BIN cannot be 0");
+const bin = (values: any[], binNumber: number, lowerBound: number, upperBound: number): number[][] => {
+  if(binNumber <= 0){
+    throw new Error("The step of BIN is illegal");
   }
-  const result = [];
-  let valueList = [];
-  values.forEach((value) => {
-    valueList.push(value.value);
-  });
-  if (typeof valueList[0] != "number") {
-    throw new Error("Parameter of BIN cannot be divided");
+  let min, max, result = [];
+  if(lowerBound && upperBound) {
+    if(lowerBound > upperBound) {
+      throw new Error("The lowerBound is bigger than upperBound");
+    }
+    min = lowerBound;
+    max = upperBound;
+  } else {
+    if (values.length == 0) {
+      throw new Error("The length of para 1 for BIN cannot be 0");
+    }
+    let valueList = [];
+    values.forEach((value) => {
+      valueList.push(value.value);
+    });
+    if (typeof valueList[0] != "number") {
+      throw new Error("Parameter of BIN cannot be divided");
+    }
+    min = Math.min(...valueList);
+    max = Math.max(...valueList);
   }
-  const min = Math.min(...valueList);
-  const max = Math.max(...valueList);
   const interval = (max - min) / binNumber;
   for (var i = 0; i < binNumber; i++) {
     result[i] = Object.assign({}, values[0]);
@@ -114,7 +124,7 @@ const descsort = (values: any[]): any[] => {
   return ascsort(values).reverse();
 }
 
-const filters = (values: any[], paras: any[]): any[] => {
+const filterByValue = (values: any[], paras: any[]): any[] => {
   let tmp = [];
   let valueList = [];
   paras.forEach(item => {
@@ -128,4 +138,15 @@ const filters = (values: any[], paras: any[]): any[] => {
   return tmp;
 }
 
-export default { sum, avg, count, add, cross, union, intersect, bin, concat, ascsort, descsort, filters };
+const filterByBound = (values: any[], lowerBound: any, upperBound: any): any[] => {
+  console.log("lb", lowerBound, upperBound);
+  let tmp = [];
+  values.forEach(item => {
+    if (item.value >= lowerBound && item.value <= upperBound) {
+      tmp.push(item);
+    }
+  })
+  return tmp;
+}
+
+export default { sum, avg, count, add, cross, union, intersect, bin, concat, ascsort, descsort, filterByValue, filterByBound };
