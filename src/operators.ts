@@ -109,15 +109,7 @@ const ascsort = (values: any[]): any[] => {
   values.forEach(item => {
     tmp.push(item);
   });
-  return tmp.sort(function (a, b) {
-    if (typeof (a.value) != typeof (b.value)) {
-      throw new Error("Sort error: incompatible data type");
-    } else if (typeof (a.value) == "number" || typeof (a.value) == "string") {
-      return a.value - b.value;
-    } else {
-      throw new Error("Sort error: items cannot be sorted");
-    }
-  });
+  return tmp.sort();
 }
 
 const descsort = (values: any[]): any[] => {
