@@ -27,7 +27,22 @@ const cross = (set1: any[], set2: any[]): any[] => {
   let res = [];
   set1.forEach((value1) => {
     set2.forEach((value2) => {
-      res.push([value1, value2]);
+      let tmp = [];
+      if (value1 instanceof Array) {
+        for (let i = 0; i < value1.length; i++) {
+          tmp.push(value1[i]);
+        }
+      } else {
+        tmp.push(value1);
+      }
+      if (value2 instanceof Array) {
+        for (let i = 0; i < value2.length; i++) {
+          tmp.push(value2[i]);
+        }
+      } else {
+        tmp.push(value2);
+      }
+      res.push(tmp);
     });
   });
   return res;
@@ -139,7 +154,7 @@ const filterByValue = (values: any[], paras: any[]): any[] => {
 }
 
 const filterByBound = (values: any[], lowerBound: any, upperBound: any): any[] => {
-  console.log("lb", lowerBound, upperBound);
+  // console.log("lb", lowerBound, upperBound);
   let tmp = [];
   values.forEach(item => {
     if (item.value >= lowerBound && item.value <= upperBound) {

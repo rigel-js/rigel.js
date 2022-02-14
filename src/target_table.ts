@@ -184,8 +184,8 @@ export const computeTargetTable = (
   tables: DataTable[],
   syntaxTree: TargetTableSyntax
 ): TargetTable => {
-  console.log("tables:");
-  console.log(tables);
+  // console.log("tables:");
+  // console.log(tables);
   var targetTable: TargetTable = [];
 
   // if (syntaxTree.row_header && syntaxTree.column_header) {
