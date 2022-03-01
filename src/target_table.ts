@@ -375,7 +375,37 @@ export const computeTargetTable = (
         queryAttr = bodyList[defaultQueryAttr];
       }
       // console.log("queryAttr:", queryAttr);
-      targetTable[i][j] = queryTable(constraints, queryAttr, tables);
+      targetTable[i][j] = {
+        value: queryTable(constraints, queryAttr, tables),
+        source: queryAttr,
+      }
+    }
+  }
+
+  // 给row_header 和 column_header 加上source
+  for (var i = columnDim; i < columnDim + rowSize; i++) {
+    for (var j = 0; j < rowDim; j++) {
+      if (!targetTable[i][j] || !targetTable[i][j].value || targetTable[i][j].value == "") continue;
+      targetTable[i][j] = {
+        value: targetTable[i][j].value,
+        source: {
+          data: targetTable[i][j].table,
+          attribute: targetTable[i][j].attribute
+        }
+      };
+    }
+  }
+
+  for (var i = 0; i < columnDim; i++) {
+    for (var j = rowDim; j < rowDim + columnSize; j++) {
+      if (!targetTable[i][j] || !targetTable[i][j].value || targetTable[i][j].value == "") continue;
+      targetTable[i][j] = {
+        value: targetTable[i][j].value,
+        source: {
+          data: targetTable[i][j].table,
+          attribute: targetTable[i][j].attribute
+        }
+      };
     }
   }
 

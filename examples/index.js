@@ -196,7 +196,7 @@ const modifyStyle = (t) => {
     }
   }else {
     if(typeof(t)=="object") {
-      if(typeof(t.value)=="object"){
+      if(t.value && typeof(t.value)=="object"){
         t=`[${t.value.lower}, ${t.value.upper}`+(t.value.isRightOpen?")":"]");
       } else {
         t = t.value;
@@ -206,6 +206,7 @@ const modifyStyle = (t) => {
   return t;
 };
 
+// console.log(result[0][1][2]);
 // console.log(result);
 // console.log(JSON.stringify(result));
 prettyPrint(result);
