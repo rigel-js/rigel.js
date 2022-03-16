@@ -129,6 +129,8 @@ const ascsort = (values: any[]): any[] => {
       throw new Error("Sort error: incompatible data type");
     } else if (typeof (a.value) == "number") {
       return (a.value > b.value) ? 1 : -1;
+    } else if (typeof (a.value) == "string") {
+      return (a.value > b.value) ? 1 : -1;
     } else {
       throw new Error("Sort error: items cannot be sorted");
     }
