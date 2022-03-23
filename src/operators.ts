@@ -117,7 +117,22 @@ const bin = (values: any[], binNumber: number, lowerBound: number, upperBound: n
   return result;
 };
 
-const concat = () => { };
+const concat = (set1: any[], set2: any[]) => {
+  if (calcDimension(set1) != calcDimension(set2)) {
+    throw new Error(`Incompatible parameters for CONCAT operation`);
+  }
+  let res = [];
+  for (let i = 0; i < set1.length && i < set2.length; i++) {
+    if(typeof(set1[i]) == "string" || typeof(set1[i]) == "number") {
+      res.push(String(set1[i]).concat(String(set2[i])));
+    } else {
+      let newObj = Object.assign({}, set1[i]);
+      newObj.value = String(set1[i].value).concat(String(set2[i].value));
+      res.push(newObj);
+    }
+  }
+  return res;
+};
 
 const ascsort = (values: any[]): any[] => {
   let tmp = [];
@@ -166,4 +181,24 @@ const filterByBound = (values: any[], lowerBound: any, upperBound: any): any[] =
   return tmp;
 }
 
-export default { sum, avg, count, add, cross, union, intersect, bin, concat, ascsort, descsort, filterByValue, filterByBound };
+const Rsplit = (values: any[], pattern: any, index: any): any[] => {
+  let ans = [];
+  for (let i = 0; i < values.length; i++) {
+    let originalString;
+    if(typeof(values[i]) == "number" || typeof(values[i]) == "string") {
+      originalString = String(values[i]);
+      let tmp = originalString.split(pattern);
+      ans.push(String(tmp[index]));
+    } else {
+      originalString = String(values[i].value);
+      let tmp = originalString.split(pattern);
+      let newObj = Object.assign({}, values[i]);
+      newObj.value = tmp[index];
+      ans.push(newObj);
+    }
+    
+  }
+  return ans;
+}
+
+export default { sum, avg, count, add, cross, union, intersect, bin, concat, ascsort, descsort, filterByValue, filterByBound, Rsplit };

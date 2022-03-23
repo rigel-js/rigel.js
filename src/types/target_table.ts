@@ -37,7 +37,8 @@ export enum OperatorEnum {
   DESCSORT = "descsort",
   ASCSORT = "ascsort",
   BOUNDFILTER = "filterByBound",
-  VALUEFILTER = "filterByValue"
+  VALUEFILTER = "filterByValue",
+  SPLIT = "split",
 }
 
 export type TargetTableExpression = string;

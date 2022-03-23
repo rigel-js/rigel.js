@@ -179,7 +179,9 @@ const result = rigel.transform({
     "(crime.state), (filterByValue(crime.year, 2004)) => (count(crime.year))",
     "(crime.state), (filterByBound(crime.year, 2003, 2005)) => (count(crime.year))",
     "(ascsort(filterByBound(crime.crime, 3370.9, 4026.3))), () => ()",
-    "(crime.state * crime.year * gdp.gdp * gdp.state), () => ()"
+    "(crime.state * crime.year * crime.crime), () => (crime.crime)",
+    "(crime.crime), () => (concat(crime.state, crime.year))",
+    "(split(crime.crime, '.', 0)), () => (crime.state)",
   ],
 });
 
@@ -206,7 +208,7 @@ const modifyStyle = (t) => {
   return t;
 };
 
-// console.log(result[0][1][2]);
+// console.log(result[0][2][3]);
 // console.log(result);
 // console.log(JSON.stringify(result));
 prettyPrint(result);

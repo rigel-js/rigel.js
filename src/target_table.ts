@@ -13,7 +13,7 @@ import {
   TargetTable,
 } from "./types";
 import operators from "./operators";
-import { calcDimension } from "./utils";
+import { calcDimension, calString } from "./utils";
 import { start } from "repl";
 import { type } from "os";
 import { IfStatement } from "esprima";
@@ -164,10 +164,15 @@ export const parseTokens = (tokens): TargetTableAttribute | TargetTableOperator 
         operator: tokens.callee.name,
         parameters: params
       } as TargetTableOperator;
-    } else if (tokens.callee.name == OperatorEnum.BOUNDFILTER) {
+    } else if (tokens.callee.name == OperatorEnum.BOUNDFILTER || tokens.callee.name == OperatorEnum.SPLIT) {
       return {
         operator: tokens.callee.name,
         parameters: [parseTokens(tokens.arguments[0]), tokens.arguments[1], tokens.arguments[2]]
+      } as TargetTableOperator;
+    } else if (tokens.callee.name == OperatorEnum.CONCAT && tokens.arguments.length > 1) {
+      return {
+        operator: tokens.callee.name,
+        parameters: [parseTokens(tokens.arguments[0]), parseTokens(tokens.arguments[1])]
       } as TargetTableOperator;
     } else {
       return {
@@ -206,7 +211,6 @@ export const computeTargetTable = (
   let cnt = 0;
   let bodyList = parseBody(syntaxTree.body);
   // console.log("body:");
-  // console.log(bodyList);
 
   if (columnList.length == 1 && columnList[0] === "_") {  // feat: 当rowHeader（或columnHeader）为空时，按照body内attr的数量填充"_"
     for (var i = 0; i < bodyList.length - 1; i++) {
@@ -339,7 +343,7 @@ export const computeTargetTable = (
           targetTable[0][j] = (tmp as TargetTableAttribute).attribute;
         } else {
           let newTmp = tmp as TargetTableOperator;
-          targetTable[0][j] = `${newTmp.operator}(${newTmp.parameters[0]})`;
+          targetTable[0][j] = calString(newTmp);
         }
         flag = 1;
       }
@@ -350,7 +354,7 @@ export const computeTargetTable = (
           targetTable[i][0] = (tmp as TargetTableAttribute).attribute;
         } else {
           let newTmp = tmp as TargetTableOperator;
-          targetTable[i][0] = `${newTmp.operator}(${newTmp.parameters[0]})`;
+          targetTable[i][0] = calString(newTmp);
         }
         if (flag && bodyList[columnDict[j]] != tmp) {
           throw new Error(
@@ -505,6 +509,9 @@ const parseHeader = (
     } else if (op == OperatorEnum.BOUNDFILTER) {
       let attrValue = parseHeader(tables, para[0] as (TargetTableAttribute | TargetTableOperator));
       targetList = operators.filterByBound(attrValue, (para[1] as OperatorValueParameter).value, (para[2] as OperatorValueParameter).value);
+    } else if (op == OperatorEnum.SPLIT) {
+      let attrValue = parseHeader(tables, para[0] as (TargetTableAttribute | TargetTableOperator));
+      targetList = operators.Rsplit(attrValue, (para[1] as OperatorValueParameter).value, (para[2] as OperatorValueParameter).value);
     } else {
       if (para.length != 2) {
         throw new Error(`Too few or too many parameters for ${op}`);
@@ -523,6 +530,8 @@ const parseHeader = (
           targetList = operators.cross(leftList, rightList);
         } else if (op === OperatorEnum.ADD) {
           targetList = operators.add(leftList, rightList);
+        } else if (op === OperatorEnum.CONCAT) {
+          targetList = operators.concat(leftList, rightList);
         }
       }
     }
@@ -537,6 +546,7 @@ const parseBody = (body: TargetTableAttribute | TargetTableOperator): any[] => {
   if (isAttribute(body)) return [body];
   let op = (body as TargetTableOperator).operator;
   let paras = (body as TargetTableOperator).parameters;
+  console.log(op, paras);
   if (op == OperatorEnum.ADD) {
     if (paras.length != 2) {
       throw new Error(`Too few or too many parameters for ${op}`);
@@ -564,55 +574,91 @@ const queryTable = (
   body: TargetTableAttribute | TargetTableOperator,
   tables: DataTable[]
 ): string | number => {
-  let queryAttr: TargetTableAttribute = isAttribute(body)
-    ? body
-    : body.parameters[0] as TargetTableAttribute;
+  // let queryAttr: TargetTableAttribute = isAttribute(body)
+  //   ? body
+  //   : body.parameters[0] as TargetTableAttribute;
   // console.log("queryAttr:", queryAttr)
-  let res = [];
-  let originTable = tables.find((table) => table.name == queryAttr.data);
-  originTable.tuples.forEach((tuple) => {
-    let ok = true;
-    constraints.forEach(constraint => {
-      let key = constraint.attribute, value = constraint.value;
-      if (typeof (value) == "object") { //bin产生的区间，包括lower和upper 
-        if (value.isRightOpen) {
-          if (!(tuple[key] >= value.lower - eps && tuple[key] < value.upper - eps)) {
-            ok = false;
+  if(isAttribute(body)) {
+    let queryAttr = body;
+    let res = [];
+    let originTable = tables.find((table) => table.name == queryAttr.data);
+    originTable.tuples.forEach((tuple) => {
+      let ok = true;
+      constraints.forEach(constraint => {
+        let key = constraint.attribute, value = constraint.value;
+        console.log(tuple[key], value);
+        if (typeof (value) == "object") { //bin产生的区间，包括lower和upper 
+          if (value.isRightOpen) {
+            if (!(tuple[key] >= value.lower - eps && tuple[key] < value.upper - eps)) {
+              ok = false;
+            }
+          } else {
+            if (!(tuple[key] >= value.lower - eps && tuple[key] <= value.upper + eps)) {
+              ok = false;
+            }
           }
-        } else {
-          if (!(tuple[key] >= value.lower - eps && tuple[key] <= value.upper + eps)) {
-            ok = false;
+        } else if((typeof(tuple[key]) == "string" && typeof(value) == "number") || (typeof(tuple[key]) == "number" && typeof(value) == "string")) {
+            ok = (String(tuple[key]) == String(value));
           }
-        }
-      } else if (tuple[key] != value) {
-        ok = false;
+          else {
+            ok = (tuple[key] == value);
+          }
+      });
+      if (ok) {
+        res.push(tuple[queryAttr.attribute]);
       }
     });
-    if (ok) {
-      res.push(tuple[queryAttr.attribute]);
-    }
-  });
-  if (isAttribute(body)) {
     return res.length > 0 ? res[0] : null;
   } else {
+    let res_all = [];
+    body.parameters.forEach(para => {
+      let queryAttr = para as TargetTableAttribute;
+      let res = [];
+      let originTable = tables.find((table) => table.name == queryAttr.data);
+      if(!originTable) return;
+      originTable.tuples.forEach((tuple) => {
+        let ok = true;
+        constraints.forEach(constraint => {
+          let key = constraint.attribute, value = constraint.value;
+          if (typeof (value) == "object") { //bin产生的区间，包括lower和upper 
+            if (value.isRightOpen) {
+              if (!(tuple[key] >= value.lower - eps && tuple[key] < value.upper - eps)) {
+                ok = false;
+              }
+            } else {
+              if (!(tuple[key] >= value.lower - eps && tuple[key] <= value.upper + eps)) {
+                ok = false;
+              }
+            }
+          } else if (tuple[key] != value) {
+            ok = false;
+          }
+        });
+        if (ok) {
+          res.push(tuple[queryAttr.attribute]);
+        }
+      });
+      res_all.push(res);
+    });
+
     if ((body as TargetTableOperator).operator == OperatorEnum.AVERAGE) {
-      if (res.length == 0) {
+      if (res_all[0].length == 0) {
         return null;
       }
       let sum = 0;
-      res.forEach((obj) => {
+      res_all[0].forEach((obj) => {
         if (typeof obj != "number") {
           throw new Error("type error for average");
         }
         sum += Number(obj);
       });
-      return sum / res.length;
+      return sum / res_all[0].length;
     } else if ((body as TargetTableOperator).operator == OperatorEnum.SUM) {
-      if (res.length == 0) {
+      if (res_all[0].length == 0) {
         return null;
       }
       let sum = 0;
-      res.forEach((obj) => {
+      res_all[0].forEach((obj) => {
         if (typeof obj != "number") {
           throw new Error("type error for average");
         }
@@ -620,13 +666,33 @@ const queryTable = (
       });
       return sum;
     } else if ((body as TargetTableOperator).operator == OperatorEnum.COUNT) {
-      return res.length;
+      return res_all[0].length;
+    } else if ((body as TargetTableOperator).operator == OperatorEnum.SPLIT) {
+      console.log(res_all[0]);
+      if(res_all[0].length) {
+        let pattern = (body as TargetTableOperator).parameters[1] as OperatorValueParameter;
+        let index = (body as TargetTableOperator).parameters[2] as OperatorValueParameter;
+        return String(res_all[0][0]).split(String(pattern.value))[index.value]; 
+      }
     } else if ((body as TargetTableOperator).operator == OperatorEnum.CONCAT) {
-      let ans = "";
-      res.forEach((obj) => {
-        ans.concat(String(obj));
-      });
-      return ans;
+      if(body.parameters.length == 1){
+        let ans = "";
+        res_all[0].forEach((obj) => {
+          ans += String(obj);
+        });
+        return ans;
+      } else {
+        let arg1 = res_all[0], arg2 = res_all[1];
+        if(arg1.length && arg2.length) {
+          return String(arg1[0]).concat(String(arg2[0]));
+        } else if(arg1.length && !arg2.length) {
+          return String(arg1[0]);
+        } else if(!arg1.length && arg2.length) {
+          return String(arg2[0]);
+        } else {
+          return null;
+        }
+      }
     } else {
       throw new Error("illegal operator");
     }
