@@ -182,6 +182,7 @@ const result = rigel.transform({
     "(crime.state * crime.year * crime.crime), () => (crime.crime)",
     "(crime.crime), () => (concat(crime.state, crime.year))",
     "(split(crime.crime, '.', 0)), () => (crime.state)",
+    "(crime.state), () => (average(crime.crime))"
   ],
 });
 

@@ -31,7 +31,7 @@ export enum OperatorEnum {
   INTERSECT = "intersect",
   BIN = "bin",
   CONCAT = "concat",
-  AVERAGE = "avg",
+  AVERAGE = "average",
   SUM = "sum",
   COUNT = "count",
   DESCSORT = "descsort",

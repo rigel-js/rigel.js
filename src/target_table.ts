@@ -640,7 +640,6 @@ const queryTable = (
       });
       res_all.push(res);
     });
-
     if ((body as TargetTableOperator).operator == OperatorEnum.AVERAGE) {
       if (res_all[0].length == 0) {
         return null;
