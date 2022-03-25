@@ -171,7 +171,7 @@ const result = rigel.transform({
   target_table: [
     "(), () => ()",
     "(crime.state), (crime.year) => (crime.crime)",
-    "(union(crime.state, gdp.state) * union(crime.year, gdp.year)), () => (crime.crime + gdp.gdp)",
+    // "(union(crime.state, gdp.state) * union(crime.year, gdp.year)), () => (crime.crime + gdp.gdp)",
     "(crime.state), (bin(crime.crime, 5)) => (count(crime.year))",
     "(crime.state), (bin(crime.crime, 5, 3000, 4200)) => (count(crime.year))",
     "(crime.state), (descsort(crime.year)) => (count(crime.year))",
@@ -182,7 +182,8 @@ const result = rigel.transform({
     "(crime.state * crime.year * crime.crime), () => (crime.crime)",
     "(crime.crime), () => (concat(crime.state, crime.year))",
     "(split(crime.crime, '.', 0)), () => (crime.state)",
-    "(crime.state), () => (average(crime.crime))"
+    "(crime.state), () => (average(crime.crime))",
+    "(intersect(crime.year, gdp.year)), () => ()",
   ],
 });
 

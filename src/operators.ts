@@ -72,11 +72,18 @@ const intersect = (set1: any[], set2: any[]): any[] => {
   if (calcDimension(set1) != calcDimension(set2)) {
     throw new Error(`Incompatible parameters for INTERSECT operation`);
   }
-  const unionSet = new Set();
-  set1.forEach((value) => {
-    if (value in set2) unionSet.add(value);
+  let valList = [];
+  set1.forEach((obj) => {
+    valList.push(obj.value);
   });
-  return Array.from(unionSet);
+  const unionSet = new Set(valList);
+  let res = [];
+  set2.forEach((value) => {
+    if (unionSet.has(value.value)) {
+      res.push(value);
+    }
+  });
+  return res;
 };
 
 const bin = (values: any[], binNumber: number, lowerBound: number, upperBound: number): number[][] => {
