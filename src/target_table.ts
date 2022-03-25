@@ -614,7 +614,7 @@ const queryTable = (
             ok = (String(tuple[key]) == String(value));
           }
           else {
-            ok = (tuple[key] == value);
+            ok = ok && (tuple[key] == value);
           }
       });
       if (ok) {
