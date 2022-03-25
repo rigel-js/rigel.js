@@ -379,8 +379,22 @@ export const computeTargetTable = (
         queryAttr = bodyList[defaultQueryAttr];
       }
       // console.log("queryAttr:", queryAttr);
+      let resTmp = queryTable(constraints, queryAttr, tables);
+      console.log("here", resTmp);
+      let finalValue;
+      if(resTmp.length > 1) {
+        finalValue = "";
+        for(let i = 0; i < resTmp.length; i++) {
+          if(i) finalValue += ",";
+          finalValue += String(resTmp[i]);
+        }
+      } else if(resTmp.length == 1) {
+        finalValue = resTmp[0];
+      } else {
+        finalValue = null;
+      }
       targetTable[i][j] = {
-        value: queryTable(constraints, queryAttr, tables),
+        value: finalValue,
         source: queryAttr,
       }
     }
@@ -546,7 +560,6 @@ const parseBody = (body: TargetTableAttribute | TargetTableOperator): any[] => {
   if (isAttribute(body)) return [body];
   let op = (body as TargetTableOperator).operator;
   let paras = (body as TargetTableOperator).parameters;
-  console.log(op, paras);
   if (op == OperatorEnum.ADD) {
     if (paras.length != 2) {
       throw new Error(`Too few or too many parameters for ${op}`);
@@ -573,7 +586,7 @@ const queryTable = (
   constraints: any[],
   body: TargetTableAttribute | TargetTableOperator,
   tables: DataTable[]
-): string | number => {
+): string[] | number[] => {
   // let queryAttr: TargetTableAttribute = isAttribute(body)
   //   ? body
   //   : body.parameters[0] as TargetTableAttribute;
@@ -586,7 +599,7 @@ const queryTable = (
       let ok = true;
       constraints.forEach(constraint => {
         let key = constraint.attribute, value = constraint.value;
-        console.log(tuple[key], value);
+        // console.log(tuple[key], value);
         if (typeof (value) == "object") { //bin产生的区间，包括lower和upper 
           if (value.isRightOpen) {
             if (!(tuple[key] >= value.lower - eps && tuple[key] < value.upper - eps)) {
@@ -605,95 +618,215 @@ const queryTable = (
           }
       });
       if (ok) {
+        if(tuple[queryAttr.attribute] != undefined)
         res.push(tuple[queryAttr.attribute]);
       }
     });
-    return res.length > 0 ? res[0] : null;
+    return res;
   } else {
-    let res_all = [];
-    body.parameters.forEach(para => {
-      let queryAttr = para as TargetTableAttribute;
-      let res = [];
-      let originTable = tables.find((table) => table.name == queryAttr.data);
-      if(!originTable) return;
-      originTable.tuples.forEach((tuple) => {
-        let ok = true;
-        constraints.forEach(constraint => {
-          let key = constraint.attribute, value = constraint.value;
-          if (typeof (value) == "object") { //bin产生的区间，包括lower和upper 
-            if (value.isRightOpen) {
-              if (!(tuple[key] >= value.lower - eps && tuple[key] < value.upper - eps)) {
-                ok = false;
-              }
-            } else {
-              if (!(tuple[key] >= value.lower - eps && tuple[key] <= value.upper + eps)) {
-                ok = false;
-              }
-            }
-          } else if (tuple[key] != value) {
-            ok = false;
-          }
-        });
-        if (ok) {
-          res.push(tuple[queryAttr.attribute]);
-        }
-      });
-      res_all.push(res);
-    });
     if ((body as TargetTableOperator).operator == OperatorEnum.AVERAGE) {
-      if (res_all[0].length == 0) {
+      let res = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables);
+      if (res.length == 0) {
         return null;
       }
       let sum = 0;
-      res_all[0].forEach((obj) => {
+      res.forEach((obj) => {
         if (typeof obj != "number") {
           throw new Error("type error for average");
         }
         sum += Number(obj);
       });
-      return sum / res_all[0].length;
+      return [sum / res.length];
     } else if ((body as TargetTableOperator).operator == OperatorEnum.SUM) {
-      if (res_all[0].length == 0) {
+      let res = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables);
+      if (res.length == 0) {
         return null;
       }
       let sum = 0;
-      res_all[0].forEach((obj) => {
+      res.forEach((obj) => {
         if (typeof obj != "number") {
           throw new Error("type error for average");
         }
         sum += Number(obj);
       });
-      return sum;
+      return [sum];
     } else if ((body as TargetTableOperator).operator == OperatorEnum.COUNT) {
-      return res_all[0].length;
+      let res = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables);
+      return [res.length];
     } else if ((body as TargetTableOperator).operator == OperatorEnum.SPLIT) {
-      console.log(res_all[0]);
-      if(res_all[0].length) {
+      let res = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables);
+      if(res.length) {
         let pattern = (body as TargetTableOperator).parameters[1] as OperatorValueParameter;
         let index = (body as TargetTableOperator).parameters[2] as OperatorValueParameter;
-        return String(res_all[0][0]).split(String(pattern.value))[index.value]; 
+        return String(res[0]).split(String(pattern.value))[index.value]; 
+      } else {
+        return [];
       }
     } else if ((body as TargetTableOperator).operator == OperatorEnum.CONCAT) {
       if(body.parameters.length == 1){
+        let res = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables);
         let ans = "";
-        res_all[0].forEach((obj) => {
+        res.forEach((obj) => {
           ans += String(obj);
         });
-        return ans;
+        return [ans];
       } else {
-        let arg1 = res_all[0], arg2 = res_all[1];
-        if(arg1.length && arg2.length) {
-          return String(arg1[0]).concat(String(arg2[0]));
-        } else if(arg1.length && !arg2.length) {
-          return String(arg1[0]);
-        } else if(!arg1.length && arg2.length) {
-          return String(arg2[0]);
+        let res1 = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables);
+        let res2 = queryTable(constraints, ((body as TargetTableOperator).parameters[1]) as (TargetTableAttribute | TargetTableOperator), tables);
+        // console.log("!!!", res1, res2);
+        if(res1.length && res2.length) {
+          let res = [];
+          for(let i = 0; i < res1.length && i < res2.length; i++) {
+            res.push(String(res1[i]).concat(String(res2[i])));
+          }
+          for(let i = res2.length; i < res1.length; i++) {
+            res.push(String(res1[i]).concat(String(res2[i])));
+          }
+          for(let i = res1.length; i < res2.length; i++) {
+            res.push(String(res1[i]).concat(String(res2[i])));
+          }
+          return res;
+        } else if(res1.length && !res2.length) {
+          return res1;
+        } else if(!res1.length && res2.length) {
+          return res2;
         } else {
-          return null;
+          return [];
         }
+      }
+    } else if ((body as TargetTableOperator).operator == OperatorEnum.UNION) {
+      let res1 = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables);
+      let res2 = queryTable(constraints, ((body as TargetTableOperator).parameters[1]) as (TargetTableAttribute | TargetTableOperator), tables);
+      console.log("!!!", res1, res2);
+      if(res1.length && res2.length) {
+        let res = [];
+        let s = {};
+        for(let i = 0; i < res1.length; i++) {
+          res.push(res1[i]);
+          s[res1[i]] = true;
+        }
+        for(let i = 0; i < res2.length; i++) {
+          if(!s[res2[i]]) {
+            res.push(res2[i]);
+          }
+        }
+        return res;
+      } else if(res1.length && !res2.length) {
+        return res1;
+      } else if(!res1.length && res2.length) {
+        return res2;
+      } else {
+        return [];
+      }
+    } else if ((body as TargetTableOperator).operator == OperatorEnum.INTERSECT) {
+      let res1 = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables);
+      let res2 = queryTable(constraints, ((body as TargetTableOperator).parameters[1]) as (TargetTableAttribute | TargetTableOperator), tables);
+      if(res1.length && res2.length) {
+        let res = [];
+        let s = {};
+        for(let i = 0; i < res1.length; i++) {
+          s[res1[i]] = true;
+        }
+        for(let i = 0; i < res2.length; i++) {
+          if(s[res2[i]]) {
+            res.push(res2[i]);
+          }
+        }
+        return res;
+      } else if(res1.length && !res2.length) {
+        return res1;
+      } else if(!res1.length && res2.length) {
+        return res2;
+      } else {
+        return [];
       }
     } else {
       throw new Error("illegal operator");
     }
+    // let res_all = [];
+    // body.parameters.forEach(para => {
+    //   let queryAttr = para as TargetTableAttribute;
+    //   let res = [];
+    //   let originTable = tables.find((table) => table.name == queryAttr.data);
+    //   if(!originTable) return;
+    //   originTable.tuples.forEach((tuple) => {
+    //     let ok = true;
+    //     constraints.forEach(constraint => {
+    //       let key = constraint.attribute, value = constraint.value;
+    //       if (typeof (value) == "object") { //bin产生的区间，包括lower和upper 
+    //         if (value.isRightOpen) {
+    //           if (!(tuple[key] >= value.lower - eps && tuple[key] < value.upper - eps)) {
+    //             ok = false;
+    //           }
+    //         } else {
+    //           if (!(tuple[key] >= value.lower - eps && tuple[key] <= value.upper + eps)) {
+    //             ok = false;
+    //           }
+    //         }
+    //       } else if (tuple[key] != value) {
+    //         ok = false;
+    //       }
+    //     });
+    //     if (ok) {
+    //       res.push(tuple[queryAttr.attribute]);
+    //     }
+    //   });
+    //   res_all.push(res);
+    // });
+    // if ((body as TargetTableOperator).operator == OperatorEnum.AVERAGE) {
+    //   if (res_all[0].length == 0) {
+    //     return null;
+    //   }
+    //   let sum = 0;
+    //   res_all[0].forEach((obj) => {
+    //     if (typeof obj != "number") {
+    //       throw new Error("type error for average");
+    //     }
+    //     sum += Number(obj);
+    //   });
+    //   return sum / res_all[0].length;
+    // } else if ((body as TargetTableOperator).operator == OperatorEnum.SUM) {
+    //   if (res_all[0].length == 0) {
+    //     return null;
+    //   }
+    //   let sum = 0;
+    //   res_all[0].forEach((obj) => {
+    //     if (typeof obj != "number") {
+    //       throw new Error("type error for average");
+    //     }
+    //     sum += Number(obj);
+    //   });
+    //   return sum;
+    // } else if ((body as TargetTableOperator).operator == OperatorEnum.COUNT) {
+    //   return res_all[0].length;
+    // } else if ((body as TargetTableOperator).operator == OperatorEnum.SPLIT) {
+    //   console.log(res_all[0]);
+    //   if(res_all[0].length) {
+    //     let pattern = (body as TargetTableOperator).parameters[1] as OperatorValueParameter;
+    //     let index = (body as TargetTableOperator).parameters[2] as OperatorValueParameter;
+    //     return String(res_all[0][0]).split(String(pattern.value))[index.value]; 
+    //   }
+    // } else if ((body as TargetTableOperator).operator == OperatorEnum.CONCAT) {
+    //   if(body.parameters.length == 1){
+    //     let ans = "";
+    //     res_all[0].forEach((obj) => {
+    //       ans += String(obj);
+    //     });
+    //     return ans;
+    //   } else {
+    //     let arg1 = res_all[0], arg2 = res_all[1];
+    //     if(arg1.length && arg2.length) {
+    //       return String(arg1[0]).concat(String(arg2[0]));
+    //     } else if(arg1.length && !arg2.length) {
+    //       return String(arg1[0]);
+    //     } else if(!arg1.length && arg2.length) {
+    //       return String(arg2[0]);
+    //     } else {
+    //       return null;
+    //     }
+    //   }
+    // } else {
+    //   throw new Error("illegal operator");
+    // }
   }
 };

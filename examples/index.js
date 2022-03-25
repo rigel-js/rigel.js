@@ -184,6 +184,7 @@ const result = rigel.transform({
     "(split(crime.crime, '.', 0)), () => (crime.state)",
     "(crime.state), () => (average(crime.crime))",
     "(intersect(crime.year, gdp.year)), () => ()",
+    "(union(crime.crime, gdp.gdp)), () => (concat(crime.state, gdp.state))",
   ],
 });
 
