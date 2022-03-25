@@ -380,7 +380,7 @@ export const computeTargetTable = (
       }
       // console.log("queryAttr:", queryAttr);
       let resTmp = queryTable(constraints, queryAttr, tables);
-      console.log("here", resTmp);
+      // console.log("here", resTmp);
       let finalValue;
       if(resTmp.length > 1) {
         finalValue = "";
