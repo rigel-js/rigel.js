@@ -622,7 +622,7 @@ const queryTable = (
         res.push(tuple[queryAttr.attribute]);
       }
     });
-    return res;
+    return Array.from(new Set(res));
   } else {
     if ((body as TargetTableOperator).operator == OperatorEnum.AVERAGE) {
       let res = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables);
@@ -708,6 +708,7 @@ const queryTable = (
         for(let i = 0; i < res2.length; i++) {
           if(!s[res2[i]]) {
             res.push(res2[i]);
+            s[res2[i]] = true;
           }
         }
         return res;
