@@ -75,7 +75,12 @@ export default class DataTable implements DataTableInterface {
     // this.tuples = values.slice(1);
     this.tuples = dataSource.values;
     this.attributes = attrs.map((attrName, index) => {
-      let valueList = values.map((tuple) => tuple[index]);
+      let valueList = [];
+      values.forEach((tuple) => {
+        if(tuple[index].value != undefined) {
+          valueList.push(tuple[index]);
+        }
+      });
       var obj = {};
       valueList = valueList.reduce(function (item, next) {
         obj[next.value] ? "" : (obj[next.value] = true && item.push(next));

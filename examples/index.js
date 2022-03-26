@@ -172,46 +172,53 @@ const result = rigel.transform({
       "values": [
         {
           "Name": "Niles C.",
-          "Number": "Tel:(800)645-8397",
+          "Type": "Tel",
+          "Number": "(800)645-8397",
           "Usage": "home"
         },
         {
           "Name": "Niles C.",
-          "Number": "Tel:(800)645-8398",
+          "Type": "Tel",
+          "Number": "(800)645-8398",
           "Usage": "work"
         },
         {
           "Name": "Niles C.",
-          "Number": "Fax:(907)586-7252",
+          "Type": "Fax",
+          "Number": "(907)586-7252",
           "Usage": "work"
         },
         {
           "Name": "Jean H.",
-          "Number": "Tel:(918)781-4600",
+          "Type": "Tel",
+          "Number": "(918)781-4600",
           "Usage": "home"
         },
         {
           "Name": "Jean H.",
-          "Number": "Tel:(918)781-4601",
+          "Type": "Tel",
+          "Number": "(918)781-4601",
           "Usage": "work"
         },
         {
           "Name": "Jean H.",
-          "Number": "Fax:(918)781-4603",
+          "Type": "Fax",
+          "Number": "(918)781-4603",
           "Usage": "home"
         },
         {
           "Name": "Jean H.",
-          "Number": "Fax:(918)781-4604",
+          "Type": "Fax",
+          "Number": "(918)781-4604",
           "Usage": "work"
         },
         {
-          "Name": "A",
+          "Name": "Bach J.",
           "Number": "781-4605",
           "Usage": "work"
         },
         {
-          "Name": "B",
+          "Name": "Bach J.",
           "Number": "(918)781-4604",
           "Usage": "work"
         }
@@ -222,20 +229,20 @@ const result = rigel.transform({
     // "(), () => ()",
     // "(crime.state), (crime.year) => (crime.crime)",
     // // "(union(crime.state, gdp.state) * union(crime.year, gdp.year)), () => (crime.crime + gdp.gdp)",
-    // "(crime.state), (bin(crime.crime, 5)) => (count(crime.year))",
-    // "(crime.state), (bin(crime.crime, 5, 3000, 4200)) => (count(crime.year))",
-    // "(crime.state), (descsort(crime.year)) => (count(crime.year))",
-    // "(crime.state), (ascsort(crime.year)) => (count(crime.year))",
-    // "(crime.state), (filterByValue(crime.year, 2004)) => (count(crime.year))",
-    // "(crime.state), (filterByBound(crime.year, 2003, 2005)) => (count(crime.year))",
-    // "(ascsort(filterByBound(crime.crime, 3370.9, 4026.3))), () => ()",
-    // "(crime.state * crime.year * crime.crime), () => (crime.crime)",
-    // "(crime.crime), () => (concat(crime.state, crime.year))",
-    // "(split(crime.crime, '.', 0)), () => (crime.state)",
-    // "(crime.state), () => (average(crime.crime))",
-    // "(intersect(crime.year, gdp.year)), () => ()",
-    // "(union(crime.crime, gdp.gdp)), () => (concat(crime.state, gdp.state))",
-    "(split(task3.Number, ':', 0)), () => ()"
+    "(crime.state), (bin(crime.crime, 5)) => (count(crime.year))",
+    "(crime.state), (bin(crime.crime, 5, 3000, 4200)) => (count(crime.year))",
+    "(crime.state), (descsort(crime.year)) => (count(crime.year))",
+    "(crime.state), (ascsort(crime.year)) => (count(crime.year))",
+    "(crime.state), (filterByValue(crime.year, 2004)) => (count(crime.year))",
+    "(crime.state), (filterByBound(crime.year, 2003, 2005)) => (count(crime.year))",
+    "(ascsort(filterByBound(crime.crime, 3370.9, 4026.3))), () => ()",
+    "(crime.state * crime.year * crime.crime), () => (crime.crime)",
+    "(crime.crime), () => (concat(crime.state, crime.year))",
+    "(split(crime.crime, '.', 0)), () => (crime.state)",
+    "(crime.state), () => (average(crime.crime))",
+    "(intersect(crime.year, gdp.year)), () => ()",
+    "(union(crime.crime, gdp.gdp)), () => (concat(crime.state, gdp.state))",
+    "(task3.Type), () => ()",
   ],
 });
 
@@ -262,7 +269,7 @@ const modifyStyle = (t) => {
   return t;
 };
 
-// console.log(result[0][2][3]);
+// console.log(result[0][2][0]);
 // console.log(result);
 // console.log(JSON.stringify(result));
 prettyPrint(result);
