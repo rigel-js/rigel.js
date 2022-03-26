@@ -167,24 +167,75 @@ const result = rigel.transform({
         { state: "Alaska", year: 2006, gdp: 55 },
       ],
     },
+    {
+      "name": "task3",
+      "values": [
+        {
+          "Name": "Niles C.",
+          "Number": "Tel:(800)645-8397",
+          "Usage": "home"
+        },
+        {
+          "Name": "Niles C.",
+          "Number": "Tel:(800)645-8398",
+          "Usage": "work"
+        },
+        {
+          "Name": "Niles C.",
+          "Number": "Fax:(907)586-7252",
+          "Usage": "work"
+        },
+        {
+          "Name": "Jean H.",
+          "Number": "Tel:(918)781-4600",
+          "Usage": "home"
+        },
+        {
+          "Name": "Jean H.",
+          "Number": "Tel:(918)781-4601",
+          "Usage": "work"
+        },
+        {
+          "Name": "Jean H.",
+          "Number": "Fax:(918)781-4603",
+          "Usage": "home"
+        },
+        {
+          "Name": "Jean H.",
+          "Number": "Fax:(918)781-4604",
+          "Usage": "work"
+        },
+        {
+          "Name": "A",
+          "Number": "781-4605",
+          "Usage": "work"
+        },
+        {
+          "Name": "B",
+          "Number": "(918)781-4604",
+          "Usage": "work"
+        }
+      ]
+    }
   ],
   target_table: [
-    "(), () => ()",
-    "(crime.state), (crime.year) => (crime.crime)",
-    // "(union(crime.state, gdp.state) * union(crime.year, gdp.year)), () => (crime.crime + gdp.gdp)",
-    "(crime.state), (bin(crime.crime, 5)) => (count(crime.year))",
-    "(crime.state), (bin(crime.crime, 5, 3000, 4200)) => (count(crime.year))",
-    "(crime.state), (descsort(crime.year)) => (count(crime.year))",
-    "(crime.state), (ascsort(crime.year)) => (count(crime.year))",
-    "(crime.state), (filterByValue(crime.year, 2004)) => (count(crime.year))",
-    "(crime.state), (filterByBound(crime.year, 2003, 2005)) => (count(crime.year))",
-    "(ascsort(filterByBound(crime.crime, 3370.9, 4026.3))), () => ()",
-    "(crime.state * crime.year * crime.crime), () => (crime.crime)",
-    "(crime.crime), () => (concat(crime.state, crime.year))",
-    "(split(crime.crime, '.', 0)), () => (crime.state)",
-    "(crime.state), () => (average(crime.crime))",
-    "(intersect(crime.year, gdp.year)), () => ()",
-    "(union(crime.crime, gdp.gdp)), () => (concat(crime.state, gdp.state))",
+    // "(), () => ()",
+    // "(crime.state), (crime.year) => (crime.crime)",
+    // // "(union(crime.state, gdp.state) * union(crime.year, gdp.year)), () => (crime.crime + gdp.gdp)",
+    // "(crime.state), (bin(crime.crime, 5)) => (count(crime.year))",
+    // "(crime.state), (bin(crime.crime, 5, 3000, 4200)) => (count(crime.year))",
+    // "(crime.state), (descsort(crime.year)) => (count(crime.year))",
+    // "(crime.state), (ascsort(crime.year)) => (count(crime.year))",
+    // "(crime.state), (filterByValue(crime.year, 2004)) => (count(crime.year))",
+    // "(crime.state), (filterByBound(crime.year, 2003, 2005)) => (count(crime.year))",
+    // "(ascsort(filterByBound(crime.crime, 3370.9, 4026.3))), () => ()",
+    // "(crime.state * crime.year * crime.crime), () => (crime.crime)",
+    // "(crime.crime), () => (concat(crime.state, crime.year))",
+    // "(split(crime.crime, '.', 0)), () => (crime.state)",
+    // "(crime.state), () => (average(crime.crime))",
+    // "(intersect(crime.year, gdp.year)), () => ()",
+    // "(union(crime.crime, gdp.gdp)), () => (concat(crime.state, gdp.state))",
+    "(split(task3.Number, ':', 0)), () => ()"
   ],
 });
 

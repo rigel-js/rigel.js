@@ -190,20 +190,26 @@ const filterByBound = (values: any[], lowerBound: any, upperBound: any): any[] =
 
 const Rsplit = (values: any[], pattern: any, index: any): any[] => {
   let ans = [];
+  let dict = new Set();
   for (let i = 0; i < values.length; i++) {
     let originalString;
     if(typeof(values[i]) == "number" || typeof(values[i]) == "string") {
       originalString = String(values[i]);
       let tmp = originalString.split(pattern);
-      ans.push(String(tmp[index]));
+      if(!dict.has(String(tmp[index]))) {
+        ans.push(String(tmp[index]));
+        dict.add(String(tmp[index]));
+      }
     } else {
       originalString = String(values[i].value);
       let tmp = originalString.split(pattern);
       let newObj = Object.assign({}, values[i]);
       newObj.value = tmp[index];
-      ans.push(newObj);
+      if(!dict.has(String(tmp[index]))){
+        ans.push(newObj);
+        dict.add(String(tmp[index]));
+      }
     }
-    
   }
   return ans;
 }
