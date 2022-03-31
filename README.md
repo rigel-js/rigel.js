@@ -36,7 +36,7 @@ let spec = {
   ],
 };
 var result = rigel.transform(spec);
-rigel.prettyPrint(result); // shape the result in readable form
+console.log(rigel.prettyPrint(result)); // shape the result in readable form
 
 //Output
 [
