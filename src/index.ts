@@ -35,7 +35,31 @@ const transform = (spec: Spec) => {
 
 const explore = () => {};
 
+const prettyPrint = (r) => {
+  let t = Object.assign([], r);
+  return modifyStyle(t);
+};
+
+const modifyStyle = (t) => {
+  if (t === null) return null;
+  if (t instanceof Array) {
+    for (var i = 0; i < t.length; i++) {
+      t[i] = modifyStyle(t[i]);
+    }
+  } else {
+    if(typeof(t)=="object") {
+      if(t.value && typeof(t.value)=="object"){
+        t=`[${t.value.lower}, ${t.value.upper}`+(t.value.isRightOpen?")":"]");
+      } else {
+        t = t.value;
+      }
+    }
+  }
+  return t;
+};
+
 export default {
   transform,
   explore,
+  prettyPrint
 };

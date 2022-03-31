@@ -31,13 +31,14 @@ export enum OperatorEnum {
   INTERSECT = "intersect",
   BIN = "bin",
   CONCAT = "concat",
-  AVERAGE = "avg",
+  AVERAGE = "average",
   SUM = "sum",
   COUNT = "count",
   DESCSORT = "descsort",
   ASCSORT = "ascsort",
   BOUNDFILTER = "filterByBound",
-  VALUEFILTER = "filterByValue"
+  VALUEFILTER = "filterByValue",
+  SPLIT = "split",
 }
 
 export type TargetTableExpression = string;

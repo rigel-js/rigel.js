@@ -72,11 +72,18 @@ const intersect = (set1: any[], set2: any[]): any[] => {
   if (calcDimension(set1) != calcDimension(set2)) {
     throw new Error(`Incompatible parameters for INTERSECT operation`);
   }
-  const unionSet = new Set();
-  set1.forEach((value) => {
-    if (value in set2) unionSet.add(value);
+  let valList = [];
+  set1.forEach((obj) => {
+    valList.push(obj.value);
   });
-  return Array.from(unionSet);
+  const unionSet = new Set(valList);
+  let res = [];
+  set2.forEach((value) => {
+    if (unionSet.has(value.value)) {
+      res.push(value);
+    }
+  });
+  return res;
 };
 
 const bin = (values: any[], binNumber: number, lowerBound: number, upperBound: number): number[][] => {
@@ -117,7 +124,22 @@ const bin = (values: any[], binNumber: number, lowerBound: number, upperBound: n
   return result;
 };
 
-const concat = () => { };
+const concat = (set1: any[], set2: any[]) => {
+  if (calcDimension(set1) != calcDimension(set2)) {
+    throw new Error(`Incompatible parameters for CONCAT operation`);
+  }
+  let res = [];
+  for (let i = 0; i < set1.length && i < set2.length; i++) {
+    if(typeof(set1[i]) == "string" || typeof(set1[i]) == "number") {
+      res.push(String(set1[i]).concat(String(set2[i])));
+    } else {
+      let newObj = Object.assign({}, set1[i]);
+      newObj.value = String(set1[i].value).concat(String(set2[i].value));
+      res.push(newObj);
+    }
+  }
+  return res;
+};
 
 const ascsort = (values: any[]): any[] => {
   let tmp = [];
@@ -128,6 +150,8 @@ const ascsort = (values: any[]): any[] => {
     if (typeof (a.value) != typeof (b.value)) {
       throw new Error("Sort error: incompatible data type");
     } else if (typeof (a.value) == "number") {
+      return (a.value > b.value) ? 1 : -1;
+    } else if (typeof (a.value) == "string") {
       return (a.value > b.value) ? 1 : -1;
     } else {
       throw new Error("Sort error: items cannot be sorted");
@@ -164,4 +188,30 @@ const filterByBound = (values: any[], lowerBound: any, upperBound: any): any[] =
   return tmp;
 }
 
-export default { sum, avg, count, add, cross, union, intersect, bin, concat, ascsort, descsort, filterByValue, filterByBound };
+const Rsplit = (values: any[], pattern: any, index: any): any[] => {
+  let ans = [];
+  let dict = new Set();
+  for (let i = 0; i < values.length; i++) {
+    let originalString;
+    if(typeof(values[i]) == "number" || typeof(values[i]) == "string") {
+      originalString = String(values[i]);
+      let tmp = originalString.split(pattern);
+      if(!dict.has(String(tmp[index]))) {
+        ans.push(String(tmp[index]));
+        dict.add(String(tmp[index]));
+      }
+    } else {
+      originalString = String(values[i].value);
+      let tmp = originalString.split(pattern);
+      let newObj = Object.assign({}, values[i]);
+      newObj.value = tmp[index];
+      if(!dict.has(String(tmp[index]))){
+        ans.push(newObj);
+        dict.add(String(tmp[index]));
+      }
+    }
+  }
+  return ans;
+}
+
+export default { sum, avg, count, add, cross, union, intersect, bin, concat, ascsort, descsort, filterByValue, filterByBound, Rsplit };

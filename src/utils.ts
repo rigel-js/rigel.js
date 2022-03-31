@@ -35,3 +35,41 @@ export const calcDimension = (arr: any): number => {
   }
 
 };
+
+// 字符串化spec
+export const calString = (spec) => {
+  if (!spec) { 
+    return ""; 
+  } else if (typeof (spec.value) == "number") {
+    return String(spec.value);
+  } else if (typeof (spec.value) == "string") {
+    return `'${String(spec.value)}'`;
+  } else if (spec.data) {
+    return `${spec.data}.${spec.attribute}`;
+  } else {
+    let res = [];
+    if (spec.parameters && spec.parameters.length > 0) {
+      spec.parameters.forEach(item => {
+        res.push(calString(item));
+      })
+    }
+    if (spec.operator == "cross" || spec.operator == "add") {
+      let tmp = res[0];
+      for (let i = 1; i < res.length; i++) {
+        tmp += ` × ${res[i]}`;
+      }
+      return tmp;
+    } else {
+      let tmp = spec.operator + "(";
+      for (let i = 0; i < res.length; i++) {
+        if (i == 0) {
+          tmp = tmp + res[i];
+        } else {
+          tmp = tmp + ", " + res[i];
+        }
+      }
+      tmp = tmp + ")";
+      return tmp;
+    }
+  }
+}
