@@ -13,7 +13,7 @@ import {
   TargetTable,
 } from "./types";
 import operators from "./operators";
-import { calcDimension, calString } from "./utils";
+import { calcDimension, calString, deepClone } from "./utils";
 import { start } from "repl";
 import { type } from "os";
 import { IfStatement } from "esprima";
@@ -150,7 +150,7 @@ export const parseTokens = (tokens): TargetTableAttribute | TargetTableOperator 
           parameters: [parseTokens(tokens.arguments[0]), tokens.arguments[1], tokens.arguments[2], tokens.arguments[3]]
         } as TargetTableOperator;
       }
-    } else if (tokens.callee.name == "intersect" || tokens.callee.name == "union") {
+    } else if (tokens.callee.name == "intersect" || tokens.callee.name == "union" || tokens.callee.name == "mul" || tokens.callee.name == "plus") {
       return {
         operator: tokens.callee.name,
         parameters: [parseTokens(tokens.arguments[0]), parseTokens(tokens.arguments[1])]
@@ -164,7 +164,7 @@ export const parseTokens = (tokens): TargetTableAttribute | TargetTableOperator 
         operator: tokens.callee.name,
         parameters: params
       } as TargetTableOperator;
-    } else if (tokens.callee.name == OperatorEnum.BOUNDFILTER || tokens.callee.name == OperatorEnum.SPLIT) {
+    } else if (tokens.callee.name == OperatorEnum.BOUNDFILTER || tokens.callee.name == OperatorEnum.SPLIT || tokens.callee.name == OperatorEnum.SUBSTR) {
       return {
         operator: tokens.callee.name,
         parameters: [parseTokens(tokens.arguments[0]), tokens.arguments[1], tokens.arguments[2]]
@@ -261,9 +261,9 @@ export const computeTargetTable = (
   }
   rowList.forEach((value) => {
     if (value instanceof Array) {
-      targetTable.push(value);
+      targetTable.push(deepClone(value));
     } else {
-      targetTable.push([value]);
+      targetTable.push([deepClone(value)]);
     }
   });
 
@@ -427,7 +427,71 @@ export const computeTargetTable = (
     }
   }
 
-  return targetTable;
+  // lazy处理body部分中的filter函数
+  let deleteRows = {};
+  let deleteColumns = {};
+  for (var i = columnDim; i < columnDim + rowSize; i++) {
+    if(rowDict[i] != -1) {
+      let attr = bodyList[rowDict[i]];
+      if(isOperator(attr) && (attr.operator == OperatorEnum.BOUNDFILTER)) {
+        let lowerBound = (attr.parameters[1] as OperatorValueParameter).value;
+        let upperBound = (attr.parameters[2] as OperatorValueParameter).value;
+        for(let j = rowDim; j < rowDim + columnSize; j++) {
+          if(targetTable[i][j].value < lowerBound || targetTable[i][j].value >= upperBound) {
+            deleteColumns[j] = true;
+          }
+        }
+      } else if(isOperator(attr) && (attr.operator == OperatorEnum.VALUEFILTER)) {
+        let dict = {};
+        for(let j = 1; j < attr.parameters.length; j++) {
+          dict[(attr.parameters[j] as OperatorValueParameter).value] = true;
+        }
+        for(let j = rowDim; j < rowDim + columnSize; j++) {
+          if(!dict[targetTable[i][j].value]) {
+            deleteColumns[j] = true;
+          }
+        }
+      }
+    }
+  }
+
+  for (var j = rowDim; j < rowDim + columnSize; j++) {
+    if(columnDict[j] != -1) {
+      let attr = bodyList[columnDict[j]];
+      if(isOperator(attr) && (attr.operator == OperatorEnum.BOUNDFILTER)) {
+        let lowerBound = (attr.parameters[1] as OperatorValueParameter).value;
+        let upperBound = (attr.parameters[2] as OperatorValueParameter).value;
+        for(let i = columnDim; i < columnDim + rowSize; i++) {
+          if(targetTable[i][j].value < lowerBound || targetTable[i][j].value >= upperBound) {
+            deleteRows[i] = true;
+          }
+        }
+      } else if(isOperator(attr) && (attr.operator == OperatorEnum.VALUEFILTER)) {
+        let dict = {};
+        for(let i = 1; i < attr.parameters.length; i++) {
+          dict[(attr.parameters[i] as OperatorValueParameter).value] = true;
+        }
+        for(let i = columnDim; i < columnDim + rowSize; i++) {
+          if(!dict[targetTable[i][j].value]) {
+            deleteRows[i] = true;
+          }
+        }
+      }
+    }
+  }
+
+  let filteredTargetTable = [];
+  for(let i = 0; i < columnDim + rowSize; i++) {
+    if(deleteRows[i]) continue;
+    let tmp = [];
+    for(let j = 0; j < rowDim + columnSize; j++) {
+      if(deleteColumns[j]) continue;
+      tmp.push(targetTable[i][j]);
+    }
+    filteredTargetTable.push(tmp);
+  }
+
+  return filteredTargetTable;
 };
 
 const isAttribute = (
@@ -658,10 +722,27 @@ const queryTable = (
       if(res.length) {
         let pattern = (body as TargetTableOperator).parameters[1] as OperatorValueParameter;
         let index = (body as TargetTableOperator).parameters[2] as OperatorValueParameter;
-        return String(res[0]).split(String(pattern.value))[index.value]; 
+        let ret = [];
+        for(let i = 0; i < res.length; i++) {
+          ret.push(String(res[i]).split(String(pattern.value))[index.value]);
+        }
+        return ret;
       } else {
         return [];
       }
+    } else if ((body as TargetTableOperator).operator == OperatorEnum.SUBSTR) {
+      let res = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables);
+      if(res.length) {
+        let s = (body as TargetTableOperator).parameters[1] as OperatorValueParameter;
+        let t = (body as TargetTableOperator).parameters[2] as OperatorValueParameter;
+        return [String(res[0]).substr(Number(s.value), Number(t.value))]; 
+      } else {
+        return [];
+      }
+    } else if ((body as TargetTableOperator).operator == OperatorEnum.BOUNDFILTER || (body as TargetTableOperator).operator == OperatorEnum.VALUEFILTER) {
+      // 对body的filter部分lazy处理
+      let res = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables);
+      return res;
     } else if ((body as TargetTableOperator).operator == OperatorEnum.CONCAT) {
       if(body.parameters.length == 1){
         let res = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables);
@@ -694,6 +775,16 @@ const queryTable = (
           return [];
         }
       }
+    } else if ((body as TargetTableOperator).operator == OperatorEnum.MUL) {
+      let res1 = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables);
+      let res2 = queryTable(constraints, ((body as TargetTableOperator).parameters[1]) as (TargetTableAttribute | TargetTableOperator), tables);
+      console.log("!!!", res1, res2);
+      return operators.mul(res1, res2);
+    } else if ((body as TargetTableOperator).operator == OperatorEnum.PLUS) {
+      let res1 = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables);
+      let res2 = queryTable(constraints, ((body as TargetTableOperator).parameters[1]) as (TargetTableAttribute | TargetTableOperator), tables);
+      console.log("!!!", res1, res2);
+      return operators.plus(res1, res2);
     } else if ((body as TargetTableOperator).operator == OperatorEnum.UNION) {
       let res1 = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables);
       let res2 = queryTable(constraints, ((body as TargetTableOperator).parameters[1]) as (TargetTableAttribute | TargetTableOperator), tables);

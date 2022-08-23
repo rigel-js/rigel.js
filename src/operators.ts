@@ -48,6 +48,36 @@ const cross = (set1: any[], set2: any[]): any[] => {
   return res;
 };
 
+const mul = (set1: any[], set2: any[]): any[] => {
+  let res = [];
+  if(!(set1 instanceof Array) || !(set2 instanceof Array)) {
+    throw new Error (`Parameters for MUL operation are not arrays`);
+  }
+  if(set1.length != set2.length) {
+    throw new Error (`Parameters for MUL operations are arrays with unequal lengths`);
+  }
+  for(let i = 0; i < set1.length; i++) {
+    let u = Number.parseFloat(set1[i]), v = Number.parseFloat(set2[i]);
+    res.push(u * v);
+  }
+  return res;
+};
+
+const plus = (set1: any[], set2: any[]): any[] => {
+  let res = [];
+  if(!(set1 instanceof Array) || !(set2 instanceof Array)) {
+    throw new Error (`Parameters for PLUS operation are not arrays`);
+  }
+  if(set1.length != set2.length) {
+    throw new Error (`Parameters for PLUS operations are arrays with unequal lengths`);
+  }
+  for(let i = 0; i < set1.length; i++) {
+    let u = Number.parseFloat(set1[i]), v = Number.parseFloat(set2[i]);
+    res.push(u + v);
+  }
+  return res;
+};
+
 const union = (set1: any[], set2: any[]): any[] => {
   // console.log("set1",set1);
   // console.log("set2", set2);
@@ -214,4 +244,4 @@ const Rsplit = (values: any[], pattern: any, index: any): any[] => {
   return ans;
 }
 
-export default { sum, avg, count, add, cross, union, intersect, bin, concat, ascsort, descsort, filterByValue, filterByBound, Rsplit };
+export default { sum, avg, count, add, cross, mul, plus, union, intersect, bin, concat, ascsort, descsort, filterByValue, filterByBound, Rsplit };

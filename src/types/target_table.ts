@@ -27,6 +27,8 @@ export type OperatorParameter =
 export enum OperatorEnum {
   ADD = "add",
   CROSSPRODUCT = "cross",
+  MUL = "mul",
+  PLUS = "plus",
   UNION = "union",
   INTERSECT = "intersect",
   BIN = "bin",
@@ -39,6 +41,7 @@ export enum OperatorEnum {
   BOUNDFILTER = "filterByBound",
   VALUEFILTER = "filterByValue",
   SPLIT = "split",
+  SUBSTR = "substr",
 }
 
 export type TargetTableExpression = string;
