@@ -267,16 +267,7 @@ export const computeTargetTable = (
     }
   });
 
-  // console.log("before parsing body:");
-  // console.log(targetTable);
-  // console.log(parseHeader(tables, {
-  //   data: "crime",
-  //   attribute: "year",
-  // }))
-  // console.log(parseHeader(tables, {
-  //   data: "crime",
-  //   attribute: "state",
-  // }))
+  // console.log(rowList)
 
 
   //Handle Body
@@ -662,8 +653,7 @@ const queryTable = (
     originTable.tuples.forEach((tuple) => {
       let ok = true;
       constraints.forEach(constraint => {
-        let key = constraint.attribute, value = constraint.value;
-        // console.log(tuple[key], value);
+        let key = constraint.attribute, value = constraint.originalValue;
         if (typeof (value) == "object") { //bin产生的区间，包括lower和upper 
           if (value.isRightOpen) {
             if (!(tuple[key] >= value.lower - eps && tuple[key] < value.upper - eps)) {

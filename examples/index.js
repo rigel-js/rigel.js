@@ -34,7 +34,8 @@ const result = rigel.transform({
     "(ascsort(filterByBound(crime.crime, 3370.9, 4026.3))), () => ()",
     "(crime.state * crime.year * crime.crime), () => (crime.crime)",
     "(crime.state), () => (average(crime.crime))",
-    "(crime.state * crime.year), () => (plus(crime.year, crime.crime))",
+    "(split(crime.state, 'la', 1)), (crime.year) => (crime.crime)",
+    "(crime.crime), (crime.year) => (split(crime.crime, '.', 0))"
   ],
 })
 

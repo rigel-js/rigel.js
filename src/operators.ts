@@ -149,7 +149,13 @@ const bin = (values: any[], binNumber: number, lowerBound: number, upperBound: n
       // upper: (i==binNumber-1)?Infinity:min+i*interval
       upper: min + (i + 1) * interval,
       isRightOpen: (i != binNumber - 1)
-    }
+    };
+    result[i].originalValue = {
+      lower: min + i * interval,
+      // upper: (i==binNumber-1)?Infinity:min+i*interval
+      upper: min + (i + 1) * interval,
+      isRightOpen: (i != binNumber - 1)
+    };
   }
   return result;
 };
@@ -222,6 +228,7 @@ const Rsplit = (values: any[], pattern: any, index: any): any[] => {
   let ans = [];
   let dict = new Set();
   for (let i = 0; i < values.length; i++) {
+    // console.log(values[i])
     let originalString;
     if(typeof(values[i]) == "number" || typeof(values[i]) == "string") {
       originalString = String(values[i]);
