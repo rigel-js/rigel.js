@@ -20,6 +20,15 @@ const result = rigel.transform({
         { state: "Alaska", year: 2006, gdp: 55 },
       ],
     },
+    {
+      name: "cashier",
+      values: [
+        { date: "2023-01-01", order: "14 kilos of apples", order_id: "10001", price: 7 },
+        { date: "2023-01-01", order: "10 kilos of bananas", order_id: "10002", price: 5 },
+        { date: "2023-01-01", order: "3 kilos of apples", order_id: "10003", price: 8 },
+        { date: "2023-01-01", order: "12 kilos of bananas", order_id: "10004", price: 4 },
+      ]
+    }
   ],
   target_table: [
     "(), () => ()",
@@ -35,7 +44,7 @@ const result = rigel.transform({
     "(crime.state * crime.year * crime.crime), () => (crime.crime)",
     "(crime.state), () => (average(crime.crime))",
     "(split(crime.state, 'la', 1)), (crime.year) => (crime.crime)",
-    "(crime.crime), (crime.year) => (split(crime.crime, '.', 0))"
+    "(split(cashier.order, ' ', 3)), (cashier.date) => (sum(mul(split(cashier.order, ' ', 0), cashier.price)))"
   ],
 })
 

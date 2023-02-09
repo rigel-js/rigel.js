@@ -53,7 +53,7 @@ export interface DataTableAttributeValue {
   value: string | number;
   table: string;
   attribute: string;
-  originalValue?: string | number;
+  originalValue?: string[] | number[];
 }
 
 export type DataTableTuple = any;

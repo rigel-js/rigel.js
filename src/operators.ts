@@ -150,12 +150,12 @@ const bin = (values: any[], binNumber: number, lowerBound: number, upperBound: n
       upper: min + (i + 1) * interval,
       isRightOpen: (i != binNumber - 1)
     };
-    result[i].originalValue = {
+    result[i].originalValue = [{
       lower: min + i * interval,
       // upper: (i==binNumber-1)?Infinity:min+i*interval
       upper: min + (i + 1) * interval,
       isRightOpen: (i != binNumber - 1)
-    };
+    }];
   }
   return result;
 };
@@ -226,25 +226,28 @@ const filterByBound = (values: any[], lowerBound: any, upperBound: any): any[] =
 
 const Rsplit = (values: any[], pattern: any, index: any): any[] => {
   let ans = [];
-  let dict = new Set();
+  let dict = {};
   for (let i = 0; i < values.length; i++) {
     // console.log(values[i])
     let originalString;
     if(typeof(values[i]) == "number" || typeof(values[i]) == "string") {
       originalString = String(values[i]);
       let tmp = originalString.split(pattern);
-      if(!dict.has(String(tmp[index]))) {
+      if(typeof(dict[String(tmp[index])]) == "undefined") {
         ans.push(String(tmp[index]));
-        dict.add(String(tmp[index]));
+        dict[String(tmp[index])] = ans.length - 1;
       }
     } else {
       originalString = String(values[i].value);
       let tmp = originalString.split(pattern);
-      let newObj = Object.assign({}, values[i]);
-      newObj.value = tmp[index];
-      if(!dict.has(String(tmp[index]))){
+      if(typeof(dict[String(tmp[index])]) == "undefined"){
+        let newObj = Object.assign({}, values[i]);
+        newObj.value = tmp[index];
         ans.push(newObj);
-        dict.add(String(tmp[index]));
+        dict[String(tmp[index])] = ans.length - 1;
+      } else { // 多个值映射到同一个值，合并originalValue 
+        let obj = ans[dict[String(tmp[index])]];
+        obj.originalValue = [...obj.originalValue, ...values[i].originalValue];
       }
     }
   }

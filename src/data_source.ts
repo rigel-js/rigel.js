@@ -63,7 +63,7 @@ export default class DataTable implements DataTableInterface {
             value: dataObj[attr],
             table: this.name,
             attribute: attr,
-            originalValue: dataObj[attr],
+            originalValue: [dataObj[attr]],
           };
           CSVLineArray.push(value);
         }

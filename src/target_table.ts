@@ -653,23 +653,32 @@ const queryTable = (
     originTable.tuples.forEach((tuple) => {
       let ok = true;
       constraints.forEach(constraint => {
+        let ok_current_constraint = true;
         let key = constraint.attribute, value = constraint.originalValue;
-        if (typeof (value) == "object") { //bin产生的区间，包括lower和upper 
+        if (typeof (value[0]) == "object") { //bin产生的区间，包括lower和upper 
           if (value.isRightOpen) {
             if (!(tuple[key] >= value.lower - eps && tuple[key] < value.upper - eps)) {
-              ok = false;
+              ok_current_constraint = false;
             }
           } else {
             if (!(tuple[key] >= value.lower - eps && tuple[key] <= value.upper + eps)) {
-              ok = false;
+              ok_current_constraint = false;
             }
           }
-        } else if((typeof(tuple[key]) == "string" && typeof(value) == "number") || (typeof(tuple[key]) == "number" && typeof(value) == "string")) {
-            ok = (String(tuple[key]) == String(value));
+        } else if((typeof(tuple[key]) == "string" && typeof(value[0]) == "number") || (typeof(tuple[key]) == "number" && typeof(value[0]) == "string")) {
+          // ok = (String(tuple[key]) == String(value));
+          for(let i = 0; i < value.length; i++) {
+            ok_current_constraint = (String(tuple[key]) == String(value[i]));
+            if(ok_current_constraint) break;
           }
-          else {
-            ok = ok && (tuple[key] == value);
+        } else {
+          for(let i = 0; i < value.length; i++) {
+            ok_current_constraint = (tuple[key] == value[i]);
+            if(ok_current_constraint) break;
           }
+        }
+        ok = (ok && ok_current_constraint);
+        if(!ok) return;
       });
       if (ok) {
         if(tuple[queryAttr.attribute] != undefined)
@@ -768,7 +777,7 @@ const queryTable = (
     } else if ((body as TargetTableOperator).operator == OperatorEnum.MUL) {
       let res1 = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables);
       let res2 = queryTable(constraints, ((body as TargetTableOperator).parameters[1]) as (TargetTableAttribute | TargetTableOperator), tables);
-      console.log("!!!", res1, res2);
+      console.log("!!!", res1, res2, JSON.stringify(constraints));
       return operators.mul(res1, res2);
     } else if ((body as TargetTableOperator).operator == OperatorEnum.PLUS) {
       let res1 = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables);
