@@ -119,10 +119,20 @@ export const parseExpression = (
 export const parseTokens = (tokens): TargetTableAttribute | TargetTableOperator => {
   // console.log("tokens:", tokens);
   if (tokens.type == "MemberExpression") {
-    return {
-      data: tokens.object.name,
-      attribute: tokens.property.name
-    } as TargetTableAttribute;
+    if(tokens.computed) {
+      if(tokens.object.type != "CallExpression" || tokens.object.callee.name != "split") {
+        throw new Error("Illegal Expression!");
+      }
+      return {
+        operator: tokens.object.callee.name,
+        parameters: [parseTokens(tokens.object.arguments[0]), tokens.object.arguments[1], tokens.property]
+      } as TargetTableOperator;
+    } else {
+      return {
+        data: tokens.object.name,
+        attribute: tokens.property.name
+      } as TargetTableAttribute;
+    }
   } else if (tokens.type == "BinaryExpression") {
     if (tokens.operator == "+") {
       return {
