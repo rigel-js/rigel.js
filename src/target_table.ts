@@ -704,7 +704,7 @@ const queryTable = (
       }
       let sum = 0;
       res.forEach((obj) => {
-        if (typeof obj != "number") {
+        if (typeof obj != "number" && !Number(obj)) {
           throw new Error("type error for average");
         }
         sum += Number(obj);
@@ -717,7 +717,7 @@ const queryTable = (
       }
       let sum = 0;
       res.forEach((obj) => {
-        if (typeof obj != "number") {
+        if (typeof obj != "number" && !Number(obj)) {
           throw new Error("type error for average");
         }
         sum += Number(obj);
