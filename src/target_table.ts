@@ -700,11 +700,11 @@ const queryTable = (
     if ((body as TargetTableOperator).operator == OperatorEnum.AVERAGE) {
       let res = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables);
       if (res.length == 0) {
-        return null;
+        return [];
       }
       let sum = 0;
       res.forEach((obj) => {
-        if (typeof obj != "number" && !Number(obj)) {
+        if (typeof obj != "number" && isNaN(Number(obj))) {
           throw new Error("type error for average");
         }
         sum += Number(obj);
@@ -713,12 +713,12 @@ const queryTable = (
     } else if ((body as TargetTableOperator).operator == OperatorEnum.SUM) {
       let res = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables);
       if (res.length == 0) {
-        return null;
+        return [];
       }
       let sum = 0;
       res.forEach((obj) => {
-        if (typeof obj != "number" && !Number(obj)) {
-          throw new Error("type error for average");
+        if (typeof obj != "number" && isNaN(Number(obj))) {
+          throw new Error("type error for SUM");
         }
         sum += Number(obj);
       });
