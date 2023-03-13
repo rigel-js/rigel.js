@@ -384,11 +384,12 @@ export const computeTargetTable = (
       // console.log("here", resTmp);
       let finalValue;
       if(resTmp.length > 1) {
-        finalValue = "";
-        for(let i = 0; i < resTmp.length; i++) {
-          if(i) finalValue += ",";
-          finalValue += String(resTmp[i]);
-        }
+        // finalValue = "";
+        // for(let i = 0; i < resTmp.length; i++) {
+        //   if(i) finalValue += ",";
+        //   finalValue += String(resTmp[i]);
+        // }
+        finalValue = resTmp;
       } else if(resTmp.length == 1) {
         finalValue = resTmp[0];
       } else {
@@ -428,6 +429,14 @@ export const computeTargetTable = (
     }
   }
 
+  // for(let i = 0 ; i< targetTable.length;i++) {
+  //   let tmp = ""
+  //   for(let j= 0; j< targetTable[i].length;j++){
+  //     tmp += targetTable[i][j] ? targetTable[i][j].value : "" + " "
+  //   }
+  //   console.log(tmp)
+  // }
+
   // lazy处理body部分中的filter函数
   let deleteRows = {};
   let deleteColumns = {};
@@ -438,8 +447,15 @@ export const computeTargetTable = (
         let lowerBound = (attr.parameters[1] as OperatorValueParameter).value;
         let upperBound = (attr.parameters[2] as OperatorValueParameter).value;
         for(let j = rowDim; j < rowDim + columnSize; j++) {
-          if(targetTable[i][j].value < lowerBound || targetTable[i][j].value >= upperBound) {
-            deleteColumns[j] = true;
+          if(targetTable[i][j].value instanceof Array) {
+            targetTable[i][j].value = targetTable[i][j].value.filter((item) => {
+              return item >= lowerBound && item < upperBound; 
+            })
+          } else {
+            if(targetTable[i][j].value < lowerBound || targetTable[i][j].value >= upperBound) {
+              // deleteColumns[j] = true;
+              targetTable[i][j].value = null;
+            }
           }
         }
       } else if(isOperator(attr) && (attr.operator == OperatorEnum.VALUEFILTER)) {
@@ -448,8 +464,15 @@ export const computeTargetTable = (
           dict[(attr.parameters[j] as OperatorValueParameter).value] = true;
         }
         for(let j = rowDim; j < rowDim + columnSize; j++) {
-          if(!dict[targetTable[i][j].value]) {
-            deleteColumns[j] = true;
+          if(targetTable[i][j].value instanceof Array) {
+            targetTable[i][j].value = targetTable[i][j].value.filter((item) => {
+              if(dict[item]) return true; else return false;
+            })
+          } else {
+            if(!dict[targetTable[i][j].value]) {
+              // deleteColumns[j] = true;
+              targetTable[i][j].value = null;
+            }
           }
         }
       }
@@ -463,8 +486,15 @@ export const computeTargetTable = (
         let lowerBound = (attr.parameters[1] as OperatorValueParameter).value;
         let upperBound = (attr.parameters[2] as OperatorValueParameter).value;
         for(let i = columnDim; i < columnDim + rowSize; i++) {
-          if(targetTable[i][j].value < lowerBound || targetTable[i][j].value >= upperBound) {
-            deleteRows[i] = true;
+          if(targetTable[i][j].value instanceof Array) {
+            targetTable[i][j].value = targetTable[i][j].value.filter((item) => {
+              return item >= lowerBound && item < upperBound;
+            }) 
+          } else {
+            if(targetTable[i][j].value < lowerBound || targetTable[i][j].value >= upperBound) {
+              // deleteRows[i] = true;
+              targetTable[i][j].value = null;
+            }
           }
         }
       } else if(isOperator(attr) && (attr.operator == OperatorEnum.VALUEFILTER)) {
@@ -473,26 +503,45 @@ export const computeTargetTable = (
           dict[(attr.parameters[i] as OperatorValueParameter).value] = true;
         }
         for(let i = columnDim; i < columnDim + rowSize; i++) {
-          if(!dict[targetTable[i][j].value]) {
-            deleteRows[i] = true;
+          if(targetTable[i][j].value instanceof Array) {
+            targetTable[i][j].value = targetTable[i][j].value.filter((item) => {
+              if(dict[item]) return true; else return false;
+            })
+          } else {
+            if(!dict[targetTable[i][j].value]) {
+              // deleteRows[i] = true;
+              targetTable[i][j].value = null;
+            }
           }
         }
       }
     }
   }
 
-  let filteredTargetTable = [];
-  for(let i = 0; i < columnDim + rowSize; i++) {
-    if(deleteRows[i]) continue;
-    let tmp = [];
-    for(let j = 0; j < rowDim + columnSize; j++) {
-      if(deleteColumns[j]) continue;
-      tmp.push(targetTable[i][j]);
-    }
-    filteredTargetTable.push(tmp);
-  }
+  // let filteredTargetTable = [];
+  // for(let i = 0; i < columnDim + rowSize; i++) {
+  //   if(deleteRows[i]) continue;
+  //   let tmp = [];
+  //   for(let j = 0; j < rowDim + columnSize; j++) {
+  //     if(deleteColumns[j]) continue;
+  //     tmp.push(targetTable[i][j]);
+  //   }
+  //   filteredTargetTable.push(tmp);
+  // }
 
-  return filteredTargetTable;
+  // return filteredTargetTable;
+  for(let i = columnDim; i < columnDim + rowSize; i++) {
+    for(let j = rowDim; j < rowDim + columnSize; j++) {
+      if(targetTable[i][j].value instanceof Array) {
+        let finalValue = "";
+        for(let k = 0; k < targetTable[i][j].value.length; k++) {
+          finalValue += (k > 0 ? ',' : '') + String(targetTable[i][j].value[k]);
+        }
+        targetTable[i][j].value = finalValue;
+      }
+    }
+  }
+  return targetTable;
 };
 
 const isAttribute = (
