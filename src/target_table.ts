@@ -437,9 +437,9 @@ export const computeTargetTable = (
   //   console.log(tmp)
   // }
 
-  // lazy处理body部分中的filter函数
-  let deleteRows = {};
-  let deleteColumns = {};
+  // lazy处理body部分中的filter、sort函数
+  // let deleteRows = {};
+  // let deleteColumns = {};
   for (var i = columnDim; i < columnDim + rowSize; i++) {
     if(rowDict[i] != -1) {
       let attr = bodyList[rowDict[i]];
@@ -473,6 +473,42 @@ export const computeTargetTable = (
               // deleteColumns[j] = true;
               targetTable[i][j].value = null;
             }
+          }
+        }
+      } else if(isOperator(attr) && (attr.operator == OperatorEnum.ASCSORT || attr.operator == OperatorEnum.DESCSORT)) {
+        let valueList: any[] = [];
+        for(let j = rowDim; j < rowDim + columnSize; j++) {
+          let value;
+          if(targetTable[i][j].value instanceof Array) {
+            value = targetTable[i][j].value.reduce((prev, cur, index) => {
+              return prev + (index == 0 ? '' : ',') + String(cur);
+            }, "");
+          } else {
+            value = targetTable[i][j].value;
+          }
+          valueList.push({
+            value: value,
+            index: j
+          });
+        }
+        const cmp = (u, v) => {
+          if(u<v) return -1;
+          if(u>v) return 1;
+          return 0;
+        }
+        valueList.sort((a, b) => {
+          let u = a.value, v = b.value;
+          if(typeof u == "number" && typeof v == "number") {
+            return attr.operator == OperatorEnum.ASCSORT ? cmp(u, v) : cmp(v, u);
+          } else {
+            return attr.operator == OperatorEnum.ASCSORT ? cmp(String(u), String(v)) : cmp(String(v), String(u));
+          }
+        })
+        let tmpTable = deepClone(targetTable);
+        for(let j = rowDim; j < rowDim + columnSize; j++) {
+          let index = valueList[j-rowDim].index; // 第j列应该被替换为第index列
+          for(let i = 0; i < columnDim + rowSize; i++) {
+            targetTable[i][j] = tmpTable[i][index];
           }
         }
       }
@@ -512,6 +548,42 @@ export const computeTargetTable = (
               // deleteRows[i] = true;
               targetTable[i][j].value = null;
             }
+          }
+        }
+      } else if(isOperator(attr) && (attr.operator == OperatorEnum.ASCSORT || attr.operator == OperatorEnum.DESCSORT)) {
+        let valueList: any[] = [];
+        for(let i = columnDim; i < columnDim + rowSize; i++) {
+          let value;
+          if(targetTable[i][j].value instanceof Array) {
+            value = targetTable[i][j].value.reduce((prev, cur, index) => {
+              return prev + (index == 0 ? '' : ',') + String(cur);
+            }, "");
+          } else {
+            value = targetTable[i][j].value;
+          }
+          valueList.push({
+            value: value,
+            index: i
+          });
+        }
+        const cmp = (u, v) => {
+          if(u<v) return -1;
+          if(u>v) return 1;
+          return 0;
+        }
+        valueList.sort((a, b) => {
+          let u = a.value, v = b.value;
+          if(typeof u == "number" && typeof v == "number") {
+            return attr.operator == OperatorEnum.ASCSORT ? cmp(u,v) : cmp(v,u);
+          } else {
+            return attr.operator == OperatorEnum.ASCSORT ? cmp(String(u), String(v)) : cmp(String(v), String(u));
+          }
+        })
+        let tmpTable = deepClone(targetTable);
+        for(let i = columnDim; i < columnDim + rowSize; i++) {
+          let index = valueList[i-columnDim].index; // 第i行应该被替换为第index行
+          for(let j = 0; j < rowDim + columnSize; j++) {
+            targetTable[i][j] = tmpTable[index][j];
           }
         }
       }
@@ -799,6 +871,10 @@ const queryTable = (
       }
     } else if ((body as TargetTableOperator).operator == OperatorEnum.BOUNDFILTER || (body as TargetTableOperator).operator == OperatorEnum.VALUEFILTER) {
       // 对body的filter部分lazy处理
+      let res = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables);
+      return res;
+    } else if ((body as TargetTableOperator).operator == OperatorEnum.ASCSORT || (body as TargetTableOperator).operator == OperatorEnum.DESCSORT) {
+      // 对body的sort部分lazy处理
       let res = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables);
       return res;
     } else if ((body as TargetTableOperator).operator == OperatorEnum.CONCAT) {
