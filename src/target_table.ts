@@ -771,7 +771,8 @@ const parseBody = (body: TargetTableAttribute | TargetTableOperator): any[] => {
 const queryTable = (
   constraints: any[],
   body: TargetTableAttribute | TargetTableOperator,
-  tables: DataTable[]
+  tables: DataTable[],
+  isNested: Boolean = false,
 ): string[] | number[] => {
   // let queryAttr: TargetTableAttribute = isAttribute(body)
   //   ? body
@@ -819,7 +820,7 @@ const queryTable = (
     return Array.from(new Set(res));
   } else {
     if ((body as TargetTableOperator).operator == OperatorEnum.AVERAGE) {
-      let res = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables);
+      let res = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables, true);
       if (res.length == 0) {
         return [];
       }
@@ -832,7 +833,7 @@ const queryTable = (
       });
       return [sum / res.length];
     } else if ((body as TargetTableOperator).operator == OperatorEnum.SUM) {
-      let res = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables);
+      let res = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables, true);
       if (res.length == 0) {
         return [];
       }
@@ -845,10 +846,10 @@ const queryTable = (
       });
       return [sum];
     } else if ((body as TargetTableOperator).operator == OperatorEnum.COUNT) {
-      let res = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables);
+      let res = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables, true);
       return [res.length];
     } else if ((body as TargetTableOperator).operator == OperatorEnum.SPLIT) {
-      let res = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables);
+      let res = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables, true);
       if(res.length) {
         let pattern = (body as TargetTableOperator).parameters[1] as OperatorValueParameter;
         let index = (body as TargetTableOperator).parameters[2] as OperatorValueParameter;
@@ -861,7 +862,7 @@ const queryTable = (
         return [];
       }
     } else if ((body as TargetTableOperator).operator == OperatorEnum.SUBSTR) {
-      let res = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables);
+      let res = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables, true);
       if(res.length) {
         let s = (body as TargetTableOperator).parameters[1] as OperatorValueParameter;
         let t = (body as TargetTableOperator).parameters[2] as OperatorValueParameter;
@@ -870,24 +871,53 @@ const queryTable = (
         return [];
       }
     } else if ((body as TargetTableOperator).operator == OperatorEnum.BOUNDFILTER || (body as TargetTableOperator).operator == OperatorEnum.VALUEFILTER) {
-      // 对body的filter部分lazy处理
-      let res = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables);
-      return res;
+      // 不nested时，对body的filter部分lazy处理
+      if(!isNested) {
+        let res = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables, true);
+        return res;
+      } else {
+        let res = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables, true);
+        if((body as TargetTableOperator).operator == OperatorEnum.BOUNDFILTER) {
+          let s = (body as TargetTableOperator).parameters[1] as OperatorValueParameter;
+          let t = (body as TargetTableOperator).parameters[2] as OperatorValueParameter;
+          let tmp = [];
+          res.forEach(item => {
+            if (item >= s.value && item <= t.value) {
+              tmp.push(item);
+            }
+          })
+          return tmp;
+        } else {
+          let paras = (body as TargetTableOperator).parameters.slice(1);
+          console.log(paras)
+          let tmp = [];
+          let valueList = [];
+          paras.forEach(item => {
+            valueList.push(item.value);
+          })
+          res.forEach(item => {
+            if (valueList.indexOf(item) != -1) {
+              tmp.push(item);
+            }
+          })
+          return tmp;
+        }
+      }
     } else if ((body as TargetTableOperator).operator == OperatorEnum.ASCSORT || (body as TargetTableOperator).operator == OperatorEnum.DESCSORT) {
       // 对body的sort部分lazy处理
-      let res = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables);
+      let res = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables, true);
       return res;
     } else if ((body as TargetTableOperator).operator == OperatorEnum.CONCAT) {
       if(body.parameters.length == 1){
-        let res = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables);
+        let res = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables, true);
         let ans = "";
         res.forEach((obj) => {
           ans += String(obj);
         });
         return [ans];
       } else {
-        let res1 = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables);
-        let res2 = queryTable(constraints, ((body as TargetTableOperator).parameters[1]) as (TargetTableAttribute | TargetTableOperator), tables);
+        let res1 = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables, true);
+        let res2 = queryTable(constraints, ((body as TargetTableOperator).parameters[1]) as (TargetTableAttribute | TargetTableOperator), tables, true);
         // console.log("!!!", res1, res2);
         if(res1.length && res2.length) {
           let res = [];
@@ -910,18 +940,18 @@ const queryTable = (
         }
       }
     } else if ((body as TargetTableOperator).operator == OperatorEnum.MUL) {
-      let res1 = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables);
-      let res2 = queryTable(constraints, ((body as TargetTableOperator).parameters[1]) as (TargetTableAttribute | TargetTableOperator), tables);
+      let res1 = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables, true);
+      let res2 = queryTable(constraints, ((body as TargetTableOperator).parameters[1]) as (TargetTableAttribute | TargetTableOperator), tables, true);
       console.log("!!!", res1, res2, JSON.stringify(constraints));
       return operators.mul(res1, res2);
     } else if ((body as TargetTableOperator).operator == OperatorEnum.PLUS) {
-      let res1 = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables);
-      let res2 = queryTable(constraints, ((body as TargetTableOperator).parameters[1]) as (TargetTableAttribute | TargetTableOperator), tables);
+      let res1 = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables, true);
+      let res2 = queryTable(constraints, ((body as TargetTableOperator).parameters[1]) as (TargetTableAttribute | TargetTableOperator), tables, true);
       console.log("!!!", res1, res2);
       return operators.plus(res1, res2);
     } else if ((body as TargetTableOperator).operator == OperatorEnum.UNION) {
-      let res1 = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables);
-      let res2 = queryTable(constraints, ((body as TargetTableOperator).parameters[1]) as (TargetTableAttribute | TargetTableOperator), tables);
+      let res1 = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables, true);
+      let res2 = queryTable(constraints, ((body as TargetTableOperator).parameters[1]) as (TargetTableAttribute | TargetTableOperator), tables, true);
       console.log("!!!", res1, res2);
       if(res1.length && res2.length) {
         let res = [];
@@ -945,8 +975,8 @@ const queryTable = (
         return [];
       }
     } else if ((body as TargetTableOperator).operator == OperatorEnum.INTERSECT) {
-      let res1 = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables);
-      let res2 = queryTable(constraints, ((body as TargetTableOperator).parameters[1]) as (TargetTableAttribute | TargetTableOperator), tables);
+      let res1 = queryTable(constraints, ((body as TargetTableOperator).parameters[0]) as (TargetTableAttribute | TargetTableOperator), tables, true);
+      let res2 = queryTable(constraints, ((body as TargetTableOperator).parameters[1]) as (TargetTableAttribute | TargetTableOperator), tables, true);
       if(res1.length && res2.length) {
         let res = [];
         let s = {};

@@ -144,6 +144,106 @@ const result = rigel.transform({
             "Author": "Jeffrey Heer"
         }
     ]
+    },
+    {
+        "name": "task5",
+        "values": [
+            {
+                "Name": "John",
+                "Course": "English",
+                "Score": "93"
+            },
+            {
+                "Name": "John",
+                "Course": "Mathamatics",
+                "Score": "78"
+            },
+            {
+                "Name": "John",
+                "Course": "Physics",
+                "Score": "84"
+            },
+            {
+                "Name": "Kevin",
+                "Course": "English",
+                "Score": "71"
+            },
+            {
+                "Name": "Kevin",
+                "Course": "Mathamatics",
+                "Score": "69"
+            },
+            {
+                "Name": "Kevin",
+                "Course": "Physics",
+                "Score": "60"
+            },
+            {
+                "Name": "Peter",
+                "Course": "English",
+                "Score": "87"
+            },
+            {
+                "Name": "Peter",
+                "Course": "Mathamatics",
+                "Score": "100"
+            },
+            {
+                "Name": "Peter",
+                "Course": "Physics",
+                "Score": "95"
+            }
+        ]
+    },
+    {
+        "name": "task8",
+        "values": [
+            {
+                "Name": "Kevin",
+                "Time": "10:05",
+                "Signin": "Yes"
+            },
+            {
+                "Name": "Kevin",
+                "Time": "14:11",
+                "Signin": "Yes"
+            },
+            {
+                "Name": "Kevin",
+                "Time": "18:35",
+                "Signin": "No"
+            },
+            {
+                "Name": "John",
+                "Time": "09:10",
+                "Signin": "Yes"
+            },
+            {
+                "Name": "John",
+                "Time": "12:15",
+                "Signin": "No"
+            },
+            {
+                "Name": "John",
+                "Time": "13:14",
+                "Signin": "Yes"
+            },
+            {
+                "Name": "John",
+                "Time": "19:55",
+                "Signin": "Yes"
+            },
+            {
+                "Name": "John",
+                "Time": "22:30",
+                "Signin": "Yes"
+            },
+            {
+                "Name": "Robin",
+                "Time": "11:30",
+                "Signin": "No"
+            }
+        ]
     }
   ],
   target_table: [
@@ -162,7 +262,8 @@ const result = rigel.transform({
     // "(split(crime.state, 'la', 1)), (crime.year) => (crime.crime)",
     // "(split(cashier.order, ' ', 3)), (cashier.date) => (sum(mul(split(cashier.order, ' ', 0), cashier.price)))"
     // "(task3.Name * filterByValue(task3.Type, 'Tel', 'Fax')), () => (task3.Number)"
-    "(crime.state), () => (descsort(crime.crime))"
+    // "(task8.Name),()=>(count(filterByValue(task8.Signin, 'Yes')))",
+    "(crime.state), () => (count(filterByBound(crime.crime, 3000, 3500)) + count(filterByBound(crime.crime, 3500, 4000)))"
   ],
 })
 
